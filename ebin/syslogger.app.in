@@ -1,0 +1,21 @@
+%% -*-erlang-*-
+{application, @PACKAGE_NAME@,
+     [
+      {description, ""},
+      {vsn, "@PACKAGE_VERSION@"},
+      {modules,      [
+                      syslogger,
+                      syslogger_sup,
+                      syslog
+                     ]},
+      {registered,   [
+                      syslogger_sup,
+                      syslog
+                     ]},
+      {applications, [
+                      kernel,
+                      stdlib
+                     ]},
+      {mod,          {syslogger, []}}
+     ]
+}.

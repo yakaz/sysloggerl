@@ -1,0 +1,14 @@
+%% -*-erlang-*-
+{
+  [
+   '@srcdir@/syslogger',
+   '@srcdir@/syslogger_sup',
+   '@srcdir@/syslog'
+  ],
+  [
+   @EMKOPTS@,
+   {outdir, "@builddir@/../ebin"},
+   {i, "@top_srcdir@/include"},
+   {i, "@top_builddir@/include"}
+  ]
+}.
