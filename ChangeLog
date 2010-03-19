@@ -1,6 +1,8 @@
 2010-03-19  Christopher Faulet  <christopher@yakaz.com>
 
-	* version 0.0.2	
+	* debian: add files to debianized syslogger.
+
+	* version 0.0.2
 	* src/syslog_wrapper.erl: With this new module, we can dynamically
 	build modules to wrap the syslog module for a specific (and
 	static) log_level.

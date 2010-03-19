@@ -1,0 +1,5 @@
+syslogger (0.0.2-1) unstable; urgency=low
+
+  * Initial release.
+
+ -- Christopher Faulet <christopher@yakaz.com>  Fri, 19 Mar 2010 17:55:25 +0100
