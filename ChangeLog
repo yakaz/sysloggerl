@@ -1,3 +1,20 @@
+2010-03-19  Christopher Faulet  <christopher@yakaz.com>
+
+	* version 0.0.2	
+	* src/syslog_wrapper.erl: With this new module, we can dynamically
+	build modules to wrap the syslog module for a specific (and
+	static) log_level.
+	* src/error_logger_syslog.erl: This new module is an event handler
+	for error logger that relay messages to syslog.
+	* src/syslog.erl (get_facility, get_loglevel): Add functions to
+	retreive, respectively, facility and loglevel from a priority
+	record.
+	* src/syslog.erl (init, format_prefix): Add log_pid option for the
+	default syslog handler. Now, to build the prefix, we use the
+	environnement variable 'logged_pid', if it exists. In the function
+	'init', we add the event handler error_logger_syslog to the error
+	logger.
+
 2010-03-16  Christopher Faulet  <christopher@yakaz.com>
 
 	* Import the project.

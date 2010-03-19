@@ -17,6 +17,8 @@
          remove/1,
          update/5,
          priority/2,
+         get_facility/1,
+         get_loglevel/1,
 
          log/3, log/4,
 
@@ -101,6 +103,10 @@ update(Name, Ident, Facility, LogLevel, Options) ->
 priority(Facility, LogLevel) when is_atom(Facility), is_atom(LogLevel) ->
     %% FIXME: check facility and log_level
     #priority{facility=Facility,log_level=LogLevel}.
+
+get_facility(#priority{facility=Facility}) -> Facility.
+get_loglevel(#priority{log_level=LogLevel}) -> LogLevel.
+
 
 %%====================================================================
 %% FIXME: check priority
@@ -250,10 +256,12 @@ init([]) ->
                              facility   = ?DEFAULT_FACILITY,
                              log_level  = ?DEFAULT_LOG_LEVEL,
                              options    = [
+                                           log_pid,
                                            {host, get_host([])},
                                            {port, ?SYSLOG_UDP_PORT}
                                           ]},
             ets:insert(syslog, Syslog),
+            error_logger:add_report_handler(error_logger_syslog),
             {ok, #state{}};
         {error, Reason} ->
             {stop, Reason}
@@ -316,6 +324,7 @@ handle_info(_Info, State) ->
     {noreply, State}.
 
 terminate(_Reason, _State) ->
+    error_logger:delete_report_handler(error_logger_syslog),
     ets:foldl(fun(Syslog, Acc) ->
                       gen_upd:close(Syslog#syslog.udp_socket),
                       Acc
@@ -351,8 +360,15 @@ get_port(_) ->
 %%====================================================================
 format_prefix(Syslog) ->
     case proplists:get_bool(log_pid, Syslog#syslog.options) of
-        true  -> Syslog#syslog.ident ++ "[" ++ io_lib:print(self()) ++ "]: ";
-        false -> Syslog#syslog.ident ++ ": "
+        true  ->
+            %% FIXME: good idea ?
+            Pid = case get(logged_pid) of
+                      undefined -> self();
+                      P -> P
+                  end,
+            Syslog#syslog.ident ++ "[" ++ io_lib:print(Pid) ++ "]: ";
+        false ->
+            Syslog#syslog.ident ++ ": "
     end.
 
 prepend_line_nb(Prefix, [Line]) ->

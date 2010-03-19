@@ -1,4 +1,8 @@
-EXTRA_DIST = syslogger.erl syslogger_sup.erl syslog.erl
+EXTRA_DIST = syslogger.erl syslogger_sup.erl syslog.erl \
+			 syslog_wrapper.erl error_logger_syslog.erl
+
+syslogsrcdir =  $(ERLANG_INSTALL_LIB_DIR_syslogger)/src
+dist_syslogsrc_DATA = syslog_wrapper.erl
 
 all-local:
 	@$(ERL) $(ERL_PATH) -pa @top_builddir@/ebin -noshell			\
