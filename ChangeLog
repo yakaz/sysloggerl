@@ -1,5 +1,8 @@
 2010-03-19  Christopher Faulet  <christopher@yakaz.com>
 
+	* Makefile.am: Add debian files in the source distribution
+	archive.
+
 	* debian: add files to debianized syslogger.
 
 	* version 0.0.2
