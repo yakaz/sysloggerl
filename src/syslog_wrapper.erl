@@ -14,6 +14,7 @@
          create/3,
          parse_transform/2,
 
+         get_loglevel/0,
          log/3,
 
          emergency_msg/2, emergency_msg/3,
@@ -73,6 +74,9 @@ parse_transform(Forms, Options) ->
 -ifndef(SYSLOG_NAME).
 -define(SYSLOG_NAME, default).
 -endif.
+
+get_loglevel() ->
+    ?SYSLOG_LOGLEVEL.
 
 log(Priority, Format, Args) ->
     LogLevel = syslog:get_loglevel(),
@@ -151,6 +155,9 @@ debug_msg(Facility, Format, Args) when ?SYSLOG_LOGLEVEL >= 7 ->
 debug_msg(_,_,_) -> ok.
 
 -else.
+
+get_loglevel() ->
+    undefined.
 
 log(_,_,_) -> ok.
 

@@ -9,6 +9,6 @@ Package: syslogger
 Architecture: all
 Section: devel
 Priority: optional
-Depends: ${erlang:Depends}, ${erlang-base:Depends}
+Depends: ${erlang:Depends}
 Description: Syslog facility for Erlang
  This is a simple interface to the Unix syslog facility.

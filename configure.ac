@@ -2,7 +2,7 @@ dnl ------------------------------------------------------------------
 dnl Autoconf initialization.
 dnl ------------------------------------------------------------------
 
-AC_INIT([syslogger], [0.0.2], [christopher@yakaz.com], [syslogger])
+AC_INIT([syslogger], [0.0.3], [christopher@yakaz.com], [syslogger])
 AC_CONFIG_MACRO_DIR([m4])
 AC_CONFIG_AUX_DIR([ac-aux])
 

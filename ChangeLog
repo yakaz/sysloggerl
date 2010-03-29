@@ -1,3 +1,11 @@
+2010-03-29  Christopher Faulet  <christopher@yakaz.com>
+
+	* Version 0.0.3
+	* src/syslog_wrapper.erl (get_loglevel): add function to retreive
+	the loglevel.
+	* debian/control, debian/rules, debian/copyright: some minor
+	fixes.
+
 2010-03-19  Christopher Faulet  <christopher@yakaz.com>
 
 	* Makefile.am: Add debian files in the source distribution
