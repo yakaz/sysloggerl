@@ -220,12 +220,12 @@ AC_CONFIG_FILES([
 	ebin/syslogger.appup
 	priv/Makefile
 	testsuite/Makefile
+	testsuite/etest
 	Makefile
 ])
 AC_CONFIG_FILES([
 	testsuite/dialyzer
-	testsuite/etest
-], [chmod +x testsuite/dialyzer testsuite/etest])
+], [chmod +x testsuite/dialyzer])
 AC_OUTPUT
 
 dnl --------------------------------------------------

@@ -2,6 +2,7 @@
 
 	* configure.ac: Bash doesn't like an "if"-block with no instructions
 	in the body: explicitly call the no-op instruction.
+	Do not make testsuite/etest executable.
 
 2010-05-10  Jean-Sébastien Pédron  <jean-sebastien@yakaz.com>
 
