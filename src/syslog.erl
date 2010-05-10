@@ -7,7 +7,7 @@
 %%% $Id$
 %%%-------------------------------------------------------------------
 -module(syslog).
--version('$Revision$ ').
+-vsn('$Revision$ ').
 
 %% API
 -export([
@@ -71,12 +71,6 @@
 %% gen_server callbacks
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2,
          terminate/2, code_change/3]).
-
-
--define(SYSLOG_UDP_PORT, 514).
--define(DEFAULT_IDENT, "syslogger").
--define(DEFAULT_FACILITY, user).
--define(DEFAULT_LOG_LEVEL, notice).
 
 -record(state, {}).
 -record(syslog, {name, ident, udp_socket, facility, log_level, options}).
@@ -250,15 +244,18 @@ init([]) ->
     %% Add default syslog ident to catch messages without ident
     case gen_udp:open(0) of
         {ok, Socket} ->
+            Default_Ident = syslogger_app:get_param(default_ident),
+            Default_Facility = syslogger_app:get_param(default_facility),
+            Default_Level = syslogger_app:get_param(default_loglevel),
             Syslog = #syslog{name       = default,
-                             ident      = ?DEFAULT_IDENT,
+                             ident      = Default_Ident,
                              udp_socket = Socket,
-                             facility   = ?DEFAULT_FACILITY,
-                             log_level  = ?DEFAULT_LOG_LEVEL,
+                             facility   = Default_Facility,
+                             log_level  = Default_Level,
                              options    = [
                                            log_pid,
                                            {host, get_host([])},
-                                           {port, ?SYSLOG_UDP_PORT}
+                                           {port, get_port([])}
                                           ]},
             ets:insert(syslog, Syslog),
             error_logger:add_report_handler(error_logger_syslog),
@@ -326,7 +323,7 @@ handle_info(_Info, State) ->
 terminate(_Reason, _State) ->
     error_logger:delete_report_handler(error_logger_syslog),
     ets:foldl(fun(Syslog, Acc) ->
-                      gen_upd:close(Syslog#syslog.udp_socket),
+                      gen_udp:close(Syslog#syslog.udp_socket),
                       Acc
               end, [], syslog),
     ets:delete(syslog),
@@ -341,21 +338,14 @@ code_change(_OldVsn, State, _Extra) ->
 %% Internal functions
 %%====================================================================
 get_host(Args) when is_list(Args) ->
-    case  proplists:get_value(host, Args) of
-        undefined ->
-            {ok, H} = inet:gethostname(),
-            H;
-        H ->
-            H
-    end;
+    proplists:get_value(host, Args, syslogger_app:get_param(syslogd_host));
 get_host(_) ->
-    {ok, H} = inet:gethostname(),
-    H.
+    syslogger_app:get_param(syslogd_host).
 
 get_port(Args) when is_list(Args) ->
-    proplists:get_value(port, Args, ?SYSLOG_UDP_PORT);
+    proplists:get_value(port, Args, syslogger_app:get_param(syslogd_port));
 get_port(_) ->
-    {ok, ?SYSLOG_UDP_PORT}.
+    syslogger_app:get_param(syslogd_port).
 
 %%====================================================================
 format_prefix(Syslog) ->

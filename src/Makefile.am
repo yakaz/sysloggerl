@@ -1,17 +1,45 @@
-EXTRA_DIST = syslogger.erl syslogger_sup.erl syslog.erl \
-			 syslog_wrapper.erl error_logger_syslog.erl
+# $Id$
 
-syslogsrcdir =  $(ERLANG_INSTALL_LIB_DIR_syslogger)/src
-dist_syslogsrc_DATA = syslog_wrapper.erl
+erlsrcdir = $(ERLANG_INSTALL_LIB_DIR_syslogger)/src
 
-all-local:
-	@$(ERL) $(ERL_PATH) -pa @top_builddir@/ebin -noshell			\
-						-eval "case make:all() of					\
-									up_to_date -> halt(0);			\
-									Err ->							\
-										io:format(\"~p~n\", [Err]),	\
-										halt(1)						\
-								end"
+dist_erlsrc_DATA = syslogger_app.erl					\
+		   syslogger_sup.erl					\
+		   syslog.erl						\
+		   syslog_wrapper.erl					\
+		   error_logger_syslog.erl
 
-clean:
-	rm -f erl_crash.dump
+CLEANFILES = Emakefile
+
+all-local: Emakefile
+	@$(ERL) +B -noshell						\
+		-pa @top_builddir@/ebin					\
+		-eval "case make:all() of				\
+		         up_to_date ->					\
+			   halt(0);					\
+		         Err ->						\
+		           io:format(\"~p~n\", [Err]),			\
+		           halt(1)					\
+		       end"
+
+# Emakefile is generated automatically with the source files declared above.
+Emakefile: Emakefile.in
+	@echo "Generate: $@"
+	@$(AWK) -v src='$(dist_erlsrc_DATA)'				\
+	"{ print }							\
+	/% DO NOT EDIT: Modules list is generated/ {			\
+		indent = index(\$$0, \"%\");				\
+		indent = substr(\$$0, 1, indent - 1);			\
+		split(src, mods);					\
+		mods_count = 0;						\
+		for (mod in mods) {					\
+			mods_count++					\
+		}							\
+		for (i = 1; i <= mods_count; i++) {			\
+			mod = mods[i];					\
+			sub(/\.erl/, \"\", mod);			\
+			if (\$$i != \$$mods_count)			\
+				print indent \"'$(srcdir)/\" mod \"',\";\
+			else						\
+				print indent \"'$(srcdir)/\" mod \"'\"	\
+		}							\
+	}" Emakefile.in > $@

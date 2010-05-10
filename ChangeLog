@@ -1,3 +1,18 @@
+2010-05-10  Jean-Sébastien Pédron  <jean-sebastien@yakaz.com>
+
+	Version 0.1.0.
+
+	This application is now modeled after the "bones" application.
+
+	The most important change is that the "syslogger" module doesn't exist
+	anymore. It has been replaced by a "syslogger_app" module. Therefore,
+	to start this application, you should use
+	"application:start(syslogger)." instead of the old syslogger:start/0.
+
+	The second noticeable change is that default values moved from the
+	"syslog" module to the syslogger.app file. The value themselves
+	havent' changed.
+
 2010-03-29  Christopher Faulet  <christopher@yakaz.com>
 
 	* Version 0.0.3

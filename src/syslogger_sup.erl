@@ -7,7 +7,7 @@
 %%% $Id$
 %%%-------------------------------------------------------------------
 -module(syslogger_sup).
--version('$Revision$ ').
+-vsn('$Revision$ ').
 
 -behaviour(supervisor).
 

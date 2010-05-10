@@ -1,6 +1,35 @@
-beamdir =  $(ERLANG_INSTALL_LIB_DIR_syslogger)/ebin
+# $Id$
 
-beam_DATA = syslogger.app syslogger.beam syslogger_sup.beam syslog.beam \
-            syslog_wrapper.beam error_logger_syslog.beam
+beamdir = $(ERLANG_INSTALL_LIB_DIR_syslogger)/ebin
 
-CLEANFILES = *.beam
+APP_FILES = syslogger.app syslogger.appup
+
+BEAM_FILES = *.beam
+
+beam_DATA = $(APP_FILES) $(BEAM_FILES)
+
+CLEANFILES = syslogger.app $(BEAM_FILES)
+
+# syslogger.app is generated automatically with all the BEAM files present in the ebin/ directory.
+syslogger.app: syslogger.app.in
+	@echo "Generate: $@"
+	@src=`ls $(BEAM_FILES) | sort`;					\
+	$(AWK) -v src="$$src"						\
+	"{ print }							\
+	/% DO NOT EDIT: Modules list is generated/ {			\
+		indent = index(\$$0, \"%\");				\
+		indent = substr(\$$0, 1, indent - 1);			\
+		split(src, mods);					\
+		mods_count = 0;						\
+		for (mod in mods) {					\
+			mods_count++					\
+		}							\
+		for (i = 1; i <= mods_count; i++) {			\
+			mod = mods[i];					\
+			sub(/\.beam/, \"\", mod);			\
+			if (\$$i != \$$mods_count)			\
+				print indent mod \",\";			\
+			else						\
+				print indent mod			\
+		}							\
+	}" syslogger.app.in > $@

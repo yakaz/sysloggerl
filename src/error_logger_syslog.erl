@@ -7,7 +7,7 @@
 %%% $Id$
 %%%-------------------------------------------------------------------
 -module(error_logger_syslog).
--version('$Revision$ ').
+-vsn('$Revision$ ').
 
 -behaviour(gen_event).
 

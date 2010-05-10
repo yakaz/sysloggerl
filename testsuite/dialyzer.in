@@ -1,0 +1,6 @@
+#!/bin/sh
+# $Id$
+
+dialyzer -n -r @top_builddir@/ebin
+
+exit 0

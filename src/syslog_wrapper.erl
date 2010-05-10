@@ -7,7 +7,7 @@
 %%% $Id$
 %%%-------------------------------------------------------------------
 -module(syslog_wrapper).
--version('$Revision$ ').
+-vsn('$Revision$ ').
 
 %% API
 -export([

@@ -1,8 +1,14 @@
 dnl ------------------------------------------------------------------
 dnl Autoconf initialization.
 dnl ------------------------------------------------------------------
+dnl $Id$
 
-AC_INIT([syslogger], [0.0.3], [christopher@yakaz.com], [syslogger])
+AC_INIT([syslogger], [0.1.0], [team@yakaz.com])
+
+dnl Release date.
+APP_RELEASE_DATE=
+
+AC_CONFIG_SRCDIR([src/syslogger_app.erl])
 AC_CONFIG_MACRO_DIR([m4])
 AC_CONFIG_AUX_DIR([ac-aux])
 
@@ -13,13 +19,6 @@ AC_REVISION([$Revision$])
 
 ECHO=echo
 COLORED_ECHO_INIT
-
-dnl ------------------------------------------------------------------
-dnl Tools.
-dnl ------------------------------------------------------------------
-
-AC_PROG_GREP
-AC_PROG_SED
 
 dnl ------------------------------------------------------------------
 dnl Internal functions for this configure script.
@@ -43,20 +42,65 @@ expand_var () {
 	echo [$]v
 }
 
+dnl ------------------------------------------------------------------
+dnl Versionning.
+dnl ------------------------------------------------------------------
+
+dnl Is this a final release?
+is_release=0
+if test "x${APP_RELEASE_DATE}" != "x"; then
+	is_release=1
+fi
+
+dnl Subversion revision.
+if test $is_release -eq 0; then
+	APP_SVNREV=`svnversion $srcdir | sed 's/^[[^:]]*://'`
+	which svnversion > /dev/null; \
+	if test $? -ne 0 -o "x$APP_SVNREV" = "xexported"; then
+		APP_SVNREV=`cat $srcdir/SVNREV`
+	else
+		echo $APP_SVNREV > $srcdir/SVNREV
+	fi
+	if test $APP_SVNREV; then
+		APP_DISTSUFFIX="-r$APP_SVNREV"
+	fi
+fi
 
 dnl ------------------------------------------------------------------
 dnl Options.
 dnl ------------------------------------------------------------------
 
 dnl Debugging option.
+if test $is_release -eq 0; then
+	default_enable_debug="yes"
+else
+	default_enable_debug="no"
+fi
 AC_ARG_ENABLE([debug],
 	AC_HELP_STRING([--enable-debug],
 	    [turn on debugging [[default=auto]]]),,
-	enable_debug=no)
+	enable_debug=$default_enable_debug)
 if test "x${enable_debug}" = "xyes"; then
-	append_to_EMKOPTS "debug_info"
-	append_to_EMKOPTS "{d, debug}"
 fi
+
+AC_ARG_ENABLE([warnings],
+	AC_HELP_STRING([--enable-warnings],
+	    [treat warnings as errors [[default=yes]]]),,
+	enable_warnings=yes)
+if test "x${enable_warnings}" = "xyes"; then
+	append_to_EMKOPTS "warnings_as_errors"
+fi
+
+AC_ARG_ENABLE([export_all],
+	AC_HELP_STRING([--enable-export-all],
+	    [export all Erlang functions [[default=no]]]),,
+	enable_export_all=no)
+if test "x${enable_export_all}" = "xyes"; then
+	append_to_EMKOPTS "export_all"
+fi
+
+dnl Include debug symbols.
+append_to_EMKOPTS "debug_info"
 
 dnl Print any warnings.
 append_to_EMKOPTS "report_warnings"
@@ -79,7 +123,6 @@ AC_ARG_WITH([erlang],
 	with_erlang=${withval%/},
 	with_erlang="")
 
-
 dnl erl(1) is used to compile Erlang modules.
 if test "x${with_erlang}" = "x"; then
 	AC_ERLANG_PATH_ERL
@@ -96,6 +139,28 @@ Erlang not found. Fill the ERL variable with erl(1) path or provide
 Erlang prefix with --with-erlang.])
 fi
 
+dnl escript(1) is used by the testsuite.
+AC_ARG_VAR([ESCRIPT], [Erlang/OTP interpreter command [autodetected]])
+
+if test "x${ESCRIPT}" = "x"; then
+	if test "x${with_erlang}" = "x"; then
+		AC_PATH_PROG([ESCRIPT], [escript],,)
+	else
+		erl_path="${with_erlang}/bin"
+		AC_PATH_PROG([ESCRIPT], [escript],,
+		    [$erl_path$PATH_SEPARATOR$PATH])
+	fi
+else
+	AC_MSG_CHECKING([for escript])
+	AC_MSG_RESULT([$ESCRIPT])
+fi
+
+if test "x${ESCRIPT}" = "x"; then
+	AC_MSG_WARN([
+escript(1) not found. Fill the ESCRIPT variable with escript(1) path if
+you want to use the testsuite.])
+fi
+
 dnl Declare ERL_LIBS as precious.
 AC_ARG_VAR([ERL_LIBS], [Erlang/OTP applications search path [none]])
 
@@ -107,17 +172,14 @@ dnl Get ERTS version.
 ERLANG_CHECK_ERTS
 ERLANG_CHECK_RELEASE
 
-dnl Erlang R13B (ERTS 5.7) is required to build ejabberd_native_listener.
-AX_COMPARE_VERSION([${ERLANG_ERTS_VER}], [ge], [5.7],
-    [is_erlang_r13b="yes"],
-    [is_erlang_r13b="no"])
-if test "x${is_erlang_r13b}" = "xno"; then
-        AC_MSG_ERROR([
-Erlang R13B is required to build syslogger but only Erlang $ERLANG_RELEASE was found!])
+dnl Erlang R13B04 (ERTS 5.7.5) is required.
+AX_COMPARE_VERSION([${ERLANG_ERTS_VER}], [ge], [5.7.5],
+    [is_erlang_r13b04="yes"],
+    [is_erlang_r13b04="no"])
+if test "x${is_erlang_r13b04}" = "xno"; then
+	AC_MSG_ERROR([
+Erlang R13B04 is required but only Erlang $ERLANG_RELEASE was found!])
 fi
-
-AC_ERLANG_CHECK_LIB([kernel],, [AC_MSG_ERROR([kenel was not found!])])
-AC_ERLANG_CHECK_LIB([stdlib],, [AC_MSG_ERROR([stdlib was not found!])])
 
 dnl Determine directories for installation.
 if test "x${prefix}" = "xNONE"; then
@@ -129,13 +191,16 @@ else
 fi
 
 AC_ERLANG_SUBST_INSTALL_LIB_DIR
-AC_ERLANG_SUBST_INSTALL_LIB_SUBDIR(syslogger, AC_PACKAGE_VERSION)
+AC_ERLANG_SUBST_INSTALL_LIB_SUBDIR(AC_PACKAGE_NAME, AC_PACKAGE_VERSION)
 
 dnl ------------------------------------------------------------------
 dnl Finale substitutions.
 dnl ------------------------------------------------------------------
 
 AC_SUBST(EMKOPTS)
+
+AC_SUBST(APP_RELEASE_DATE)
+AC_SUBST(APP_DISTSUFFIX)
 
 exp_ERLANG_INSTALL_LIB_DIR_syslogger=`expand_var ERLANG_INSTALL_LIB_DIR_syslogger`
 AC_SUBST(exp_ERLANG_INSTALL_LIB_DIR_syslogger)
@@ -148,12 +213,18 @@ echo
 AM_CONFIG_HEADER([config.h])
 AC_CONFIG_FILES([
 	src/Makefile
-	src/Emakefile
+	src/Emakefile.in
 	ebin/Makefile
-	ebin/syslogger.app
-    priv/Makefile
+	ebin/syslogger.app.in
+	ebin/syslogger.appup
+	priv/Makefile
+	testsuite/Makefile
 	Makefile
 ])
+AC_CONFIG_FILES([
+	testsuite/dialyzer
+	testsuite/etest
+], [chmod +x testsuite/dialyzer testsuite/etest])
 AC_OUTPUT
 
 dnl --------------------------------------------------
@@ -161,14 +232,17 @@ dnl Configuration report
 dnl --------------------------------------------------
 
 echo
-COLORED_ECHO([ %B== syslogger ${PACKAGE_VERSION} ==%b])
+COLORED_ECHO([ %B== ${PACKAGE_NAME} ${PACKAGE_VERSION}${APP_DISTSUFFIX} ==%b])
 echo
 COLORED_ECHO([Configuration:])
-COLORED_ECHO([    Prefix:             ${prefix}])
-COLORED_ECHO([    Application dir.:   ${exp_ERLANG_INSTALL_LIB_DIR_syslogger}])
+COLORED_ECHO([    Prefix:               ${prefix}])
+COLORED_ECHO([    Application dir.:     ${exp_ERLANG_INSTALL_LIB_DIR_syslogger}])
 echo
-COLORED_ECHO([    Erlang emulator:    ${ERL}])
-COLORED_ECHO([    Erlang compiler:    ${ERLC}])
+COLORED_ECHO([    Erlang emulator:      ${ERL}])
+COLORED_ECHO([    Erlang compiler:      ${ERLC}])
+COLORED_ECHO([    Erlang interpreter:   ${ESCRIPT}])
 echo
-COLORED_ECHO([    Debug:              ${enable_debug}])
+COLORED_ECHO([    Debug:                ${enable_debug}])
+COLORED_ECHO([    Warnings as errors:   ${enable_warnings}])
+COLORED_ECHO([    Export all:           ${enable_export_all}])
 echo
