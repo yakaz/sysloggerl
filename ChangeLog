@@ -1,5 +1,10 @@
 2010-05-10  Jean-Sébastien Pédron  <jean-sebastien@yakaz.com>
 
+	* configure.ac: Bash doesn't like an "if"-block with no instructions
+	in the body: explicitly call the no-op instruction.
+
+2010-05-10  Jean-Sébastien Pédron  <jean-sebastien@yakaz.com>
+
 	Version 0.1.0.
 
 	This application is now modeled after the "bones" application.
