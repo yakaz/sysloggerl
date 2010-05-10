@@ -1,3 +1,9 @@
+syslogger (0.1.0-1) unstable; urgency=low
+
+  * New upstream release.
+
+ -- Jean-Sébastien Pédron <jean-sebastien@yakaz.com>  Mon, 10 May 2010 17:40:51 +0200
+
 syslogger (0.0.3-1) unstable; urgency=low
 
   * New upstream release.

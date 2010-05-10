@@ -4,6 +4,12 @@
 	in the body: explicitly call the no-op instruction.
 	Do not make testsuite/etest executable.
 
+	* debian/rules: Remove hard-coded version. Do not specify CFLAGS in
+	front of ./configure: first, it's useless for this application,
+	second, it's a bad practice.
+
+	* debian/changelog: Declare the new version.
+
 2010-05-10  Jean-Sébastien Pédron  <jean-sebastien@yakaz.com>
 
 	Version 0.1.0.
