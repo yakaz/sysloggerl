@@ -3,6 +3,8 @@
 	* src/Makefile.am: Fix Emakefile generation by only selecting modules,
 	eg. no headers.
 
+	* Makefile.am: priv/ is treated before testsuite/.
+
 2010-05-10  Jean-Sébastien Pédron  <jean-sebastien@yakaz.com>
 
 	* configure.ac: Bash doesn't like an "if"-block with no instructions
