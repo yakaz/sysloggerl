@@ -29,10 +29,12 @@ Emakefile: Emakefile.in
 	/% DO NOT EDIT: Modules list is generated/ {			\
 		indent = index(\$$0, \"%\");				\
 		indent = substr(\$$0, 1, indent - 1);			\
-		split(src, mods);					\
+		split(src, files);					\
 		mods_count = 0;						\
-		for (mod in mods) {					\
-			mods_count++					\
+		for (file in files) {					\
+			if (files[file] !~ /\.erl$$/)			\
+				continue;				\
+			mods[++mods_count] = files[file]		\
 		}							\
 		for (i = 1; i <= mods_count; i++) {			\
 			mod = mods[i];					\
