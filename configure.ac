@@ -81,7 +81,7 @@ AC_ARG_ENABLE([debug],
 	    [turn on debugging [[default=auto]]]),,
 	enable_debug=$default_enable_debug)
 if test "x${enable_debug}" = "xyes"; then
-	:
+	append_to_EMKOPTS "{d, debug}"
 fi
 
 AC_ARG_ENABLE([warnings],
