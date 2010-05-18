@@ -56,41 +56,9 @@ is_param_valid(syslogd_port, Value) when is_integer(Value), Value > 0 ->
 is_param_valid(default_ident, Value) ->
     io_lib:char_list(Value);
 is_param_valid(default_facility, Value) ->
-    Facilities = [
-      kern,
-      user,
-      mail,
-      daemon,
-      auth,
-      syslog,
-      lpr,
-      news,
-      uucp,
-      cron,
-      authpriv,
-      ftp,
-      local0,
-      local1,
-      local2,
-      local3,
-      local4,
-      local5,
-      local6,
-      local7
-    ],
-    lists:member(Value, Facilities);
+    syslog:is_facility_valid(Value);
 is_param_valid(default_loglevel, Value) ->
-    Levels = [
-      emergency,
-      alert,
-      critical,
-      error,
-      warning,
-      notice,
-      info,
-      debug
-    ],
-    lists:member(Value, Levels);
+    syslog:is_loglevel_valid(Value);
 is_param_valid(_Param, _Value) ->
     false.
 

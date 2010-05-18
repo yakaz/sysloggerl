@@ -19,6 +19,8 @@
          priority/2,
          get_facility/1,
          get_loglevel/1,
+         is_facility_valid/1,
+         is_loglevel_valid/1,
 
          log/3, log/4,
 
@@ -101,6 +103,37 @@ priority(Facility, LogLevel) when is_atom(Facility), is_atom(LogLevel) ->
 get_facility(#priority{facility=Facility}) -> Facility.
 get_loglevel(#priority{log_level=LogLevel}) -> LogLevel.
 
+is_facility_valid(kern)     -> true;
+is_facility_valid(user)     -> true;
+is_facility_valid(mail)     -> true;
+is_facility_valid(daemon)   -> true;
+is_facility_valid(auth)     -> true;
+is_facility_valid(syslog)   -> true;
+is_facility_valid(lpr)      -> true;
+is_facility_valid(news)     -> true;
+is_facility_valid(uucp)     -> true;
+is_facility_valid(cron)     -> true;
+is_facility_valid(authpriv) -> true;
+is_facility_valid(ftp)      -> true;
+is_facility_valid(local0)   -> true;
+is_facility_valid(local1)   -> true;
+is_facility_valid(local2)   -> true;
+is_facility_valid(local3)   -> true;
+is_facility_valid(local4)   -> true;
+is_facility_valid(local5)   -> true;
+is_facility_valid(local6)   -> true;
+is_facility_valid(local7)   -> true;
+is_facility_valid(_)        -> false.
+
+is_loglevel_valid(emergency) -> true;
+is_loglevel_valid(alert)     -> true;
+is_loglevel_valid(critical)  -> true;
+is_loglevel_valid(error)     -> true;
+is_loglevel_valid(warning)   -> true;
+is_loglevel_valid(notice)    -> true;
+is_loglevel_valid(info)      -> true;
+is_loglevel_valid(debug)     -> true;
+is_loglevel_valid(_)         -> false.
 
 %%====================================================================
 %% FIXME: check priority

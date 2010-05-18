@@ -3,6 +3,9 @@
 	* configure.ac: Define "debug" for Erlang code if --enable-debug is
 	set.
 
+	* src/syslog.erl, src/syslogger_app.erl: Add two functions that return
+	if a facility and a log level are valid respectively.
+
 2010-05-11  Jean-Sébastien Pédron  <jean-sebastien@yakaz.com>
 
 	* src/Makefile.am: Fix Emakefile generation by only selecting modules,
