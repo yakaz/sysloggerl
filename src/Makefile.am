@@ -22,7 +22,7 @@ all-local: Emakefile
 		       end"
 
 # Emakefile is generated automatically with the source files declared above.
-Emakefile: Emakefile.in
+Emakefile: Makefile.am Emakefile.in
 	@echo "Generate: $@"
 	@$(AWK) -v src='$(dist_erlsrc_DATA)'				\
 	"{ print }							\
@@ -30,16 +30,20 @@ Emakefile: Emakefile.in
 		indent = index(\$$0, \"%\");				\
 		indent = substr(\$$0, 1, indent - 1);			\
 		split(src, files);					\
-		mods_count = 0;						\
+		files_count = 0;					\
 		for (file in files) {					\
-			if (files[file] !~ /\.erl$$/)			\
+			files_count++					\
+		}							\
+		mods_count = 0;						\
+		for (i = 1; i <= files_count; i++) {			\
+			if (files[i] !~ /\.erl$$/)			\
 				continue;				\
-			mods[++mods_count] = files[file]		\
+			mods[++mods_count] = files[i]			\
 		}							\
 		for (i = 1; i <= mods_count; i++) {			\
 			mod = mods[i];					\
 			sub(/\.erl/, \"\", mod);			\
-			if (\$$i != \$$mods_count)			\
+			if (i != mods_count)				\
 				print indent \"'$(srcdir)/\" mod \"',\";\
 			else						\
 				print indent \"'$(srcdir)/\" mod \"'\"	\

@@ -9,6 +9,7 @@
 # Uncomment this to turn on verbose mode.
 #export DH_VERBOSE=1
 
+WORKDIR=$(CURDIR)/debian/build
 DESTDIR=$(CURDIR)/debian/syslogger
 
 ifneq (,$(findstring debug,$(DEB_BUILD_OPTIONS)))
@@ -20,19 +21,24 @@ endif
 configure: configure-stamp
 configure-stamp:
 		dh_testdir
-		./configure --enable-debug=$(DEBUG)
+		if [ -d $(WORKDIR) ]; then rm -fr $(WORKDIR); fi
+		mkdir -p $(WORKDIR)
+		cd $(WORKDIR) &&					\
+		$(CURDIR)/configure --enable-debug=$(DEBUG)
 		touch configure-stamp
 
 build: build-stamp
 build-stamp: configure-stamp
 		dh_testdir
-		$(MAKE)
+		cd $(WORKDIR) && $(MAKE)
 		touch $@
 
 clean: clean-stamp
 		dh_testdir
 		dh_testroot
 		dh_clean
+		rm -rf $(WORKDIR)
+
 clean-stamp:
 		rm -f *-stamp
 
@@ -41,7 +47,7 @@ install: build
 		dh_testroot
 		dh_clean -k
 		dh_installdirs -i
-		$(MAKE) install DESTDIR=$(DESTDIR)
+		cd $(WORKDIR) && $(MAKE) install DESTDIR=$(DESTDIR)
 
 
 # Build architecture-independent files here.

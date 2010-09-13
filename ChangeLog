@@ -1,3 +1,21 @@
+2010-09-13  Jean-Sébastien Pédron  <jean-sebastien@yakaz.com>
+
+	Synchronize with bones.
+
+	* src/Makefile.am: Emakefile depends on Makefile.am. This resolves
+	problems with out-dated Emakefile with GNU make but not BSD make,
+	because the latter doesn't reload a self-modified Makefile. Fix
+	a problem where the source files order was lost in Emakefile.
+
+	* ebin/Makefile.am: Use a variable for the application name. This
+	reduces the diff with copies of this Makefile.am in other projects.
+	The .app file depends on this Makefile.am too.
+
+	* src/Makefile.am, ebin/Makefile.am: Fix a bug in AWK code used to
+	generate Emakefile and .app files.
+
+	* debian/rules: Build package in a separate directory.
+
 2010-05-18  Jean-Sébastien Pédron  <jean-sebastien@yakaz.com>
 
 	* configure.ac: Define "debug" for Erlang code if --enable-debug is
