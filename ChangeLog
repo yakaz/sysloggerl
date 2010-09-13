@@ -9,7 +9,8 @@
 
 	* ebin/Makefile.am: Use a variable for the application name. This
 	reduces the diff with copies of this Makefile.am in other projects.
-	The .app file depends on this Makefile.am too.
+	The .app file depends on this Makefile.am too. Use PACKAGE_NAME for
+	the application name. Typo in Awk code.
 
 	* src/Makefile.am, ebin/Makefile.am: Fix a bug in AWK code used to
 	generate Emakefile and .app files.
