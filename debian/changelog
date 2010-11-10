@@ -1,3 +1,9 @@
+syslogger (1.0.0-1) unstable; urgency=low
+
+  * New upstream release.
+
+ -- Christopher Faulet <christopher@yakaz.com>  Wed, 10 Nov 2010 15:27:55 +0100
+
 syslogger (0.1.0-1) unstable; urgency=low
 
   * New upstream release.

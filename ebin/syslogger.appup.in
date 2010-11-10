@@ -4,8 +4,10 @@
 
 { "@VERSION@",
   [
-    % To upgrade from the specified version to current one.
+    %% To upgrade from the specified version to current one.
+    {"0.1.0", []}
   ], [
-    % To downgrade from the current version to the specified one.
+    %% To downgrade from the current version to the specified one.
+    {"0.1.0", []}
   ]
 }.

@@ -1,3 +1,10 @@
+2010-11-10  Christopher Faulet  <christopher@yakaz.com>
+
+	Version 1.0.0. Prepare the first stable version.
+
+	* ebin/syslogger.appup.in: Support live upgrade from 0.1.0 to
+	1.0.0.
+
 2010-09-13  Jean-Sébastien Pédron  <jean-sebastien@yakaz.com>
 
 	Synchronize with bones.
