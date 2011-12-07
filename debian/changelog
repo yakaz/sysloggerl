@@ -1,3 +1,9 @@
+syslogger (1.0.1-1) experimental; urgency=low
+
+  * New upstream release.
+
+ -- Christopher Faulet <christopher@yakaz.com>  Mon, 24 Jan 2011 10:02:34 +0100
+
 syslogger (1.0.0-3) unstable; urgency=low
 
   * Build syslogger for erlang R14B01.

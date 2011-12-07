@@ -24,14 +24,14 @@
 
          log/3, log/4,
 
-         emergency_msg/2, emergency_msg/3, emergency_msg/4,
-         alert_msg/2,     alert_msg/3,     alert_msg/4,
-         critical_msg/2,  critical_msg/3,  critical_msg/4,
-         error_msg/2,     error_msg/3,     error_msg/4,
-         warning_msg/2,   warning_msg/3,   warning_msg/4,
-         notice_msg/2,    notice_msg/3,    notice_msg/4,
-         info_msg/2,      info_msg/3,      info_msg/4,
-         debug_msg/2,     debug_msg/3,     debug_msg/4
+         emergency_msg/1, emergency_msg/2, emergency_msg/3, emergency_msg/4,
+         alert_msg/1,     alert_msg/2,     alert_msg/3,     alert_msg/4,
+         critical_msg/1,  critical_msg/2,  critical_msg/3,  critical_msg/4,
+         error_msg/1,     error_msg/2,     error_msg/3,     error_msg/4,
+         warning_msg/1,   warning_msg/2,   warning_msg/3,   warning_msg/4,
+         notice_msg/1,    notice_msg/2,    notice_msg/3,    notice_msg/4,
+         info_msg/1,      info_msg/2,      info_msg/3,      info_msg/4,
+         debug_msg/1,     debug_msg/2,     debug_msg/3,     debug_msg/4
         ]).
 
 -export([
@@ -146,6 +146,9 @@ log(Name, #priority{}=Priority, Format, Args) when is_list(Format),
 
 
 %%====================================================================
+emergency_msg(Format) ->
+    log(#priority{log_level=emergency}, Format, []).
+
 emergency_msg(Format, Args) ->
     log(#priority{log_level=emergency}, Format, Args).
 
@@ -157,6 +160,9 @@ emergency_msg(Name, Facility, Format, Args) ->
 
 
 %%====================================================================
+alert_msg(Format) ->
+    log(default, #priority{log_level=alert}, Format, []).
+
 alert_msg(Format, Args) ->
     log(default, #priority{log_level=alert}, Format, Args).
 
@@ -168,6 +174,9 @@ alert_msg(Name, Facility, Format, Args) ->
 
 
 %%====================================================================
+critical_msg(Format) ->
+    log(default, #priority{log_level=critical}, Format, []).
+
 critical_msg(Format, Args) ->
     log(default, #priority{log_level=critical}, Format, Args).
 
@@ -179,6 +188,9 @@ critical_msg(Name, Facility, Format, Args) ->
 
 
 %%====================================================================
+error_msg(Format) ->
+    log(default, #priority{log_level=error}, Format, []).
+
 error_msg(Format, Args) ->
     log(default, #priority{log_level=error}, Format, Args).
 
@@ -191,6 +203,9 @@ error_msg(Name, Facility, Format, Args) ->
 
 
 %%====================================================================
+warning_msg(Format) ->
+    log(default, #priority{log_level=warning}, Format, []).
+
 warning_msg(Format, Args) ->
     log(default, #priority{log_level=warning}, Format, Args).
 
@@ -202,6 +217,9 @@ warning_msg(Name, Facility, Format, Args) ->
 
 
 %%====================================================================
+notice_msg(Format) ->
+    log(default, #priority{log_level=notice}, Format, []).
+
 notice_msg(Format, Args) ->
     log(default, #priority{log_level=notice}, Format, Args).
 
@@ -213,6 +231,9 @@ notice_msg(Name, Facility, Format, Args) ->
 
 
 %%====================================================================
+info_msg(Format) ->
+    log(default, #priority{log_level=info}, Format, []).
+
 info_msg(Format, Args) ->
     log(default, #priority{log_level=info}, Format, Args).
 
@@ -223,6 +244,9 @@ info_msg(Name, Facility, Format, Args) ->
     log(Name, #priority{facility=Facility, log_level=info}, Format, Args).
 
 %%====================================================================
+debug_msg(Format) ->
+    log(default, #priority{log_level=debug}, Format, []).
+
 debug_msg(Format, Args) ->
     log(default, #priority{log_level=debug}, Format, Args).
 

@@ -3,7 +3,7 @@ dnl Autoconf initialization.
 dnl ------------------------------------------------------------------
 dnl $Id$
 
-AC_INIT([syslogger], [1.0.0], [team@yakaz.com])
+AC_INIT([syslogger], [1.0.1], [team@yakaz.com])
 
 dnl Release date.
 APP_RELEASE_DATE=

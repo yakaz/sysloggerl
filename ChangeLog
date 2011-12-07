@@ -1,3 +1,13 @@
+2011-12-07  Christopher Faulet  <christopher@yakaz.com>
+
+	* src/syslog.erl: Add a version of log functions that taking only
+	a string as parameter.
+
+	Version 1.0.1. Prepare the first stable version.
+
+	* ebin/syslogger.appup.in: Support live upgrade from 1.0.0 to
+	1.0.1.
+
 2010-11-11  Christopher Faulet  <christopher@yakaz.com>
 
 	Branche STABLE_1.
