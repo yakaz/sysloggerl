@@ -1,14 +1,16 @@
-Source: syslogger
+Source: erlang-syslogger
 Section: devel
 Priority: optional
 Maintainer: Christopher Faulet <christopher@yakaz.com>
 Build-Depends: debhelper (>= 5.0.0), autotools-dev, erlang-dev (>= 1:13.b.1-3)
 Standards-Version: 3.8.4
 
-Package: syslogger
+Package: erlang-syslogger
 Architecture: all
 Section: devel
 Priority: optional
 Depends: ${erlang:Depends}
+Replaces: syslogger
+Conflicts: syslogger
 Description: Syslog facility for Erlang
  This is a simple interface to the Unix syslog facility.

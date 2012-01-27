@@ -1,3 +1,9 @@
+erlang-syslogger (1.0.1-2) experimental; urgency=low
+
+  * Rename debian package.
+
+ -- Christopher Faulet <christopher@yakaz.com>  Thu, 26 Jan 2012 14:58:22 +0100
+
 syslogger (1.0.1-1) experimental; urgency=low
 
   * New upstream release.
