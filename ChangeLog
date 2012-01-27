@@ -1,3 +1,7 @@
+2012-01-27  Christopher Faulet  <christopher@yakaz.com>
+
+	* debian/rules: Refactor the file.
+
 2011-12-07  Christopher Faulet  <christopher@yakaz.com>
 
 	* src/syslog.erl: Add a version of log functions that taking only
