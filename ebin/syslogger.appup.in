@@ -5,9 +5,11 @@
 { "@VERSION@",
   [
     %% To upgrade from the specified version to current one.
+    {"1.0.1", []},
     {"1.0.0", [{load_module, syslog}]}
   ], [
     %% To downgrade from the current version to the specified one.
+    {"1.0.1", []},
     {"1.0.0", [{load_module, syslog}]}
   ]
 }.

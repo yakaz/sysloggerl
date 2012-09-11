@@ -1,3 +1,9 @@
+erlang-syslogger (1.1.0-1) experimental; urgency=low
+
+  * Package for Erlang R15B03.
+
+ -- Jean-Sébastien Pédron <jean-sebastien@yakaz.com>  Tue, 11 Sep 2012 15:22:24 +0200
+
 erlang-syslogger (1.0.1-2) experimental; urgency=low
 
   * Rename debian package.
