@@ -663,6 +663,55 @@ get_host(Opts) ->
 get_port(Opts) ->
     proplists:get_value(port, Opts, syslogger_app:get_param(syslogd_port)).
 
+get_hostname() ->
+    case node() of
+        nonode@nohost ->
+            {ok, Hostname} = inet:gethostname(),
+            Hostname;
+        Node ->
+            string:sub_word(atom_to_list(Node), 2, $@)
+    end.
+
+get_timestamp() ->
+    {{_, Mo, D}, {H, Mi, S}} = calendar:now_to_local_time(os:timestamp()),
+    [month(Mo), $\s, day(D), $\s, digit(H), $:, digit(Mi), $:, digit(S)].
+
+month( 1) -> "Jan";
+month( 2) -> "Feb";
+month( 3) -> "Mar";
+month( 4) -> "Apr";
+month( 5) -> "May";
+month( 6) -> "Jun";
+month( 7) -> "Jul";
+month( 8) -> "Aug";
+month( 9) -> "Sep";
+month(10) -> "Oct";
+month(11) -> "Nov";
+month(12) -> "Dec".
+
+day(1) -> " 1";
+day(2) -> " 2";
+day(3) -> " 3";
+day(4) -> " 4";
+day(5) -> " 5";
+day(6) -> " 6";
+day(7) -> " 7";
+day(8) -> " 8";
+day(9) -> " 9";
+day(N) -> integer_to_list(N).
+
+digit(0) -> "00";
+digit(1) -> "01";
+digit(2) -> "02";
+digit(3) -> "03";
+digit(4) -> "04";
+digit(5) -> "05";
+digit(6) -> "06";
+digit(7) -> "07";
+digit(8) -> "08";
+digit(9) -> "09";
+digit(N) -> integer_to_list(N).
+
 %% ----
 format_prefix(Syslog) ->
     case proplists:get_bool(log_pid, Syslog#syslog.options) of
@@ -735,7 +784,9 @@ send_syslog_packet(#syslog{udp_socket=Socket, facility=DFacility, options=Opts},
             undefined -> (?MODULE:DFacility() bsl 3) bor ?MODULE:LogLevel();
             _         -> (?MODULE:Facility() bsl 3) bor ?MODULE:LogLevel()
         end,
-    Packet = ["<", integer_to_list(Priority), ">", Message],
+    Packet = ["<", integer_to_list(Priority), ">",
+              get_timestamp(), $\s, get_hostname(), $\s,
+              Message],
     Host   = get_host(Opts),
     Port   = get_port(Opts),
     gen_udp:send(Socket, Host, Port, Packet).
