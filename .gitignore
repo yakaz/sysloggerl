@@ -1,5 +1,7 @@
 .swp
 .*.swp
+*.Pbeam
+*.beam
 ac-aux/
 aclocal.m4
 autom4te.cache/
@@ -7,20 +9,18 @@ config.h*
 config.log*
 config.status*
 configure
-stamp*
+stamp-*
+.deps
+.rebar
 Makefile
 Makefile.in
 */Makefile
 */Makefile.in
-src/Emakefile
-src/Emakefile.in
-ebin/*.app
-ebin/*.app.in
-ebin/*.appup
-ebin/*.beam
+ebin/syslogger.app
+ebin/syslogger.appup
+
 testsuite/etest
 testsuite/dialyzer
-.project
 
 # Files produced by Debian package.
 build-stamp
@@ -31,3 +31,4 @@ debian/build
 debian/files
 debian/syslogger
 debian/*-stamp
+debian/watch

@@ -1,13 +1,29 @@
-%%%-------------------------------------------------------------------
-%%% File    : error_logger_syslog.erl
-%%% Author  : Christopher Faulet <christopher@yakaz.com>
-%%% Description :
-%%%
-%%% Created : 19 Mar 2010 by Christopher Faulet <christopher@yakaz.com>
-%%% $Id$
-%%%-------------------------------------------------------------------
+%-
+% Copyright (c) 2012-2014 Yakaz
+% All rights reserved.
+%
+% Redistribution and use in source and binary forms, with or without
+% modification, are permitted provided that the following conditions
+% are met:
+% 1. Redistributions of source code must retain the above copyright
+% notice, this list of conditions and the following disclaimer.
+% 2. Redistributions in binary form must reproduce the above copyright
+% notice, this list of conditions and the following disclaimer in the
+% documentation and/or other materials provided with the distribution.
+%
+% THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS ``AS IS'' AND
+% ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+% IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+% ARE DISCLAIMED. IN NO EVENT SHALL THE AUTHOR OR CONTRIBUTORS BE LIABLE
+% FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+% DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+% OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+% HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+% LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+% OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+% SUCH DAMAGE.
+
 -module(error_logger_syslog).
--vsn('$Revision$ ').
 
 -behaviour(gen_event).
 
@@ -83,20 +99,18 @@ format_report(Report) ->
 
 
 format_report2([{Tag, Data} | Rest], Result, LineLength) ->
-    Prefix = lists:flatten(io_lib:format("    ~p", [Tag])),
+    Prefix       = lists:flatten(io_lib:format("    ~p", [Tag])),
     PrefixLength = length(Prefix) + 2,
-    CurLength = LineLength - PrefixLength,
-    DataStr = lists:flatten(io_lib:print(Data, PrefixLength, CurLength, -1)),
-    Result2 = Prefix ++ ": " ++ DataStr ++ "\n",
-    format_report2(Rest, Result ++ Result2, LineLength);
-
+    CurLength    = LineLength - PrefixLength,
+    DataStr      = io_lib:print(Data, PrefixLength, CurLength, -1),
+    Result2      = [Prefix, $:, $\s, DataStr, $\n],
+    format_report2(Rest, [Result2|Result], LineLength);
 format_report2([Term | Rest], Result, LineLength) ->
-    Result2 = lists:flatten(io_lib:print(Term, 1, LineLength, -1)) ++ "\n",
-    format_report2(Rest, Result ++ Result2, LineLength);
-
+    Result2 = [io_lib:print(Term, 1, LineLength, -1), $\n],
+    format_report2(Rest, [Result2|Result], LineLength);
 format_report2([], Result, _LineLength) ->
-    Result.
+    lists:flatten(lists:reverse(Result)).
 
-is_string([]) -> true;
 is_string([H | T]) when is_integer(H), H > 1, H < 255 -> is_string(T);
-is_string(_) -> false.
+is_string([])                                         -> true;
+is_string(_)                                          -> false.

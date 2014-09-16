@@ -1,13 +1,29 @@
-%%%-------------------------------------------------------------------
-%%% File    : syslog.erl
-%%% Author  : Christopher Faulet <christopher@yakaz.com>
-%%% Description :
-%%%
-%%% Created : 15 Mar 2010 by Christopher Faulet <christopher@yakaz.com>
-%%% $Id$
-%%%-------------------------------------------------------------------
+%-
+% Copyright (c) 2012-2014 Yakaz
+% All rights reserved.
+%
+% Redistribution and use in source and binary forms, with or without
+% modification, are permitted provided that the following conditions
+% are met:
+% 1. Redistributions of source code must retain the above copyright
+% notice, this list of conditions and the following disclaimer.
+% 2. Redistributions in binary form must reproduce the above copyright
+% notice, this list of conditions and the following disclaimer in the
+% documentation and/or other materials provided with the distribution.
+%
+% THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS ``AS IS'' AND
+% ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+% IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+% ARE DISCLAIMED. IN NO EVENT SHALL THE AUTHOR OR CONTRIBUTORS BE LIABLE
+% FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+% DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+% OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+% HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+% LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+% OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+% SUCH DAMAGE.
+
 -module(syslog).
--vsn('$Revision$ ').
 
 %% API
 -export([
@@ -58,50 +74,134 @@
          cron/0,
          authpriv/0,
          ftp/0,
-         local0/0,
-         local1/0,
-         local2/0,
-         local3/0,
-         local4/0,
-         local5/0,
-         local6/0,
+         local0/0, local1/0, local2/0, local3/0, local4/0, local5/0, local6/0,
          local7/0
         ]).
-
-
 
 %% gen_server callbacks
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2,
          terminate/2, code_change/3]).
 
--record(state, {}).
--record(syslog, {name, ident, udp_socket, facility, log_level, options}).
--record(priority, {facility, log_level}).
+
+%% ----
+-export_type([facility/0, loglevel/0, priority/0]).
+
+-type facility() :: kern   | user   | mail   | daemon | auth     | syslog
+                  | lpr    | news   | uucp   | cron   | authpriv | ftp
+                  | local0 | local1 | local2 | local3 | local4   | local5
+                  | local6 | local7.
+
+-type loglevel() :: emergency | alert | critical | error | warning | notice
+                  | info      | debug.
+
+-record(syslog,   {name       :: atom(),
+                   ident      :: string(),
+                   udp_socket :: inet:socket(),
+                   facility   :: syslog:facility(),
+                   log_level  :: syslog:loglevel(),
+                   options    :: proplists:proplist()}).
+
+-record(priority, {facility  :: syslog:facility(),
+                   log_level :: syslog:loglevel()}).
+
+-opaque priority() :: #priority{}.
+
 %%====================================================================
 %% API
 %%====================================================================
+-spec start_link() -> Result when
+      Result :: {ok, pid()}
+              | ignore
+              | {error, {already_started, pid()} | term()}.
+
 start_link() ->
     gen_server:start_link({local, ?MODULE}, ?MODULE, [], []).
+
+%% ----
+-spec stop() -> ok.
 
 stop() ->
     gen_server:cast(?MODULE, stop).
 
+%% ----
+-spec add(Name, Ident, Facility, LogLevel, Options) -> Result when
+      Name     :: atom(),
+      Ident    :: string(),
+      Facility :: syslog:facility(),
+      LogLevel :: syslog:loglevel(),
+      Options  :: proplists:proplist(),
+      Result   :: {ok, inet:socket()}
+                | {error, already_exists | invalid_facility | invalid_loglevel}
+                | {error, inet:posix()}.
 
 add(Name, Ident, Facility, LogLevel, Options) ->
-    gen_server:call(?MODULE, {add, Name, Ident, Facility, LogLevel, Options}).
+    case {is_facility_valid(Facility), is_loglevel_valid(LogLevel)} of
+        {true, true} ->
+            gen_server:call(?MODULE,
+                            {add, Name, Ident, Facility, LogLevel, Options});
+        {false, _} ->
+            {error, invalid_facility};
+        {_,  false} ->
+            {error, invalid_loglevel}
+    end.
+
+%% ----
+-spec remove(atom()) -> ok.
 
 remove(Name) ->
-    gen_server:call(?MODULE, {remove, Name}).
+    gen_server:call(?MODULE, {remove,Name}).
+
+%% ----
+-spec update(Name, Ident, Facility, LogLevel, Options) -> Result when
+      Name     :: atom(),
+      Ident    :: string(),
+      Facility :: syslog:facility(),
+      LogLevel :: syslog:loglevel(),
+      Options  :: proplists:proplist(),
+      Result   :: {ok, inet:socket()}
+                | {error, not_found | invalid_facility | invalid_loglevel}.
 
 update(Name, Ident, Facility, LogLevel, Options) ->
-    gen_server:call(?MODULE, {update, Name, Ident, Facility, LogLevel, Options}).
+    case {is_facility_valid(Facility), is_loglevel_valid(LogLevel)} of
+        {true, true} ->
+            gen_server:call(?MODULE,
+                            {update, Name, Ident, Facility, LogLevel, Options});
+        {false, _} ->
+            {error, invalid_facility};
+        {_,  false} ->
+            {error, invalid_loglevel}
+    end.
 
-priority(Facility, LogLevel) when is_atom(Facility), is_atom(LogLevel) ->
-    %% FIXME: check facility and log_level
-    #priority{facility=Facility,log_level=LogLevel}.
+%% ----
+-spec priority(Facility, LogLevel) -> Result when
+      Facility :: syslog:facility(),
+      LogLevel :: syslog:loglevel(),
+      Result   :: syslog:priority()
+                | {error, invalid_facility | invalid_loglevel}.
+
+priority(Facility, LogLevel) ->
+    case {is_facility_valid(Facility), is_loglevel_valid(LogLevel)} of
+        {true,  true}  -> #priority{facility=Facility, log_level=LogLevel};
+        {false, _}     -> {error, invalid_facility};
+        {_,     false} -> {error, invalid_loglevel}
+    end.
+
+%% ----
+-spec get_facility(Priority) -> Facility when
+      Priority :: syslog:priority(),
+      Facility :: syslog:facility().
 
 get_facility(#priority{facility=Facility}) -> Facility.
+
+%% ----
+-spec get_loglevel(Priority) -> LogLevel when
+      Priority :: syslog:priority(),
+      LogLevel :: syslog:loglevel().
+
 get_loglevel(#priority{log_level=LogLevel}) -> LogLevel.
+
+%% ----
+-spec is_facility_valid(term()) -> boolean().
 
 is_facility_valid(kern)     -> true;
 is_facility_valid(user)     -> true;
@@ -125,6 +225,10 @@ is_facility_valid(local6)   -> true;
 is_facility_valid(local7)   -> true;
 is_facility_valid(_)        -> false.
 
+
+%% ----
+-spec is_loglevel_valid(term()) -> boolean().
+
 is_loglevel_valid(emergency) -> true;
 is_loglevel_valid(alert)     -> true;
 is_loglevel_valid(critical)  -> true;
@@ -136,16 +240,45 @@ is_loglevel_valid(debug)     -> true;
 is_loglevel_valid(_)         -> false.
 
 %%====================================================================
-%% FIXME: check priority
-log(Priority, Format, Args) ->
+-spec log(Priority, Format, Arg) -> Result when
+      Priority :: syslog:priority(),
+      Format   :: string(),
+      Arg      :: list(),
+      Result   :: ok | {error, inet:posix()}.
+-spec log(Name, Priority, Format, Arg) -> Result when
+      Name     :: atom(),
+      Priority :: syslog:priority(),
+      Format   :: string(),
+      Arg      :: list(),
+      Result   :: ok | {error, inet:posix()}.
+
+log(#priority{}=Priority, Format, Args) ->
     log(default, Priority, Format, Args).
 
 log(Name, #priority{}=Priority, Format, Args) when is_list(Format),
                                                    is_list(Args) ->
     send_syslog_message(Name, Priority, Format, Args).
 
+%% ----
+-spec emergency_msg(Format) -> Result when
+      Format   :: string(),
+      Result   :: ok | {error, inet:posix()}.
+-spec emergency_msg(Format, Args) -> Result when
+      Format   :: string(),
+      Args     :: list(),
+      Result   :: ok | {error, inet:posix()}.
+-spec emergency_msg(Name, Format, Args) -> Result when
+      Name     :: atom(),
+      Format   :: string(),
+      Args     :: list(),
+      Result   :: ok | {error, inet:posix()}.
+-spec emergency_msg(Name, Facility, Format, Args) -> Result when
+      Name     :: atom(),
+      Facility :: syslog:facility(),
+      Format   :: string(),
+      Args     :: list(),
+      Result   :: ok | {error, inet:posix()}.
 
-%%====================================================================
 emergency_msg(Format) ->
     log(#priority{log_level=emergency}, Format, []).
 
@@ -158,8 +291,26 @@ emergency_msg(Name, Format, Args)->
 emergency_msg(Name, Facility, Format, Args) ->
     log(Name, #priority{facility=Facility, log_level=emergency}, Format, Args).
 
+%% ----
+-spec alert_msg(Format) -> Result when
+      Format   :: string(),
+      Result   :: ok | {error, inet:posix()}.
+-spec alert_msg(Format, Args) -> Result when
+      Format   :: string(),
+      Args     :: list(),
+      Result   :: ok | {error, inet:posix()}.
+-spec alert_msg(Name, Format, Args) -> Result when
+      Name     :: atom(),
+      Format   :: string(),
+      Args     :: list(),
+      Result   :: ok | {error, inet:posix()}.
+-spec alert_msg(Name, Facility, Format, Args) -> Result when
+      Name     :: atom(),
+      Facility :: syslog:facility(),
+      Format   :: string(),
+      Args     :: list(),
+      Result   :: ok | {error, inet:posix()}.
 
-%%====================================================================
 alert_msg(Format) ->
     log(default, #priority{log_level=alert}, Format, []).
 
@@ -172,8 +323,26 @@ alert_msg(Name, Format, Args)->
 alert_msg(Name, Facility, Format, Args) ->
     log(Name, #priority{facility=Facility, log_level=alert}, Format, Args).
 
+%% ----
+-spec critical_msg(Format) -> Result when
+      Format   :: string(),
+      Result   :: ok | {error, inet:posix()}.
+-spec critical_msg(Format, Args) -> Result when
+      Format   :: string(),
+      Args     :: list(),
+      Result   :: ok | {error, inet:posix()}.
+-spec critical_msg(Name, Format, Args) -> Result when
+      Name     :: atom(),
+      Format   :: string(),
+      Args     :: list(),
+      Result   :: ok | {error, inet:posix()}.
+-spec critical_msg(Name, Facility, Format, Args) -> Result when
+      Name     :: atom(),
+      Facility :: syslog:facility(),
+      Format   :: string(),
+      Args     :: list(),
+      Result   :: ok | {error, inet:posix()}.
 
-%%====================================================================
 critical_msg(Format) ->
     log(default, #priority{log_level=critical}, Format, []).
 
@@ -186,8 +355,26 @@ critical_msg(Name, Format, Args)->
 critical_msg(Name, Facility, Format, Args) ->
     log(Name, #priority{facility=Facility, log_level=critical}, Format, Args).
 
+%% ----
+-spec error_msg(Format) -> Result when
+      Format   :: string(),
+      Result   :: ok | {error, inet:posix()}.
+-spec error_msg(Format, Args) -> Result when
+      Format   :: string(),
+      Args     :: list(),
+      Result   :: ok | {error, inet:posix()}.
+-spec error_msg(Name, Format, Args) -> Result when
+      Name     :: atom(),
+      Format   :: string(),
+      Args     :: list(),
+      Result   :: ok | {error, inet:posix()}.
+-spec error_msg(Name, Facility, Format, Args) -> Result when
+      Name     :: atom(),
+      Facility :: syslog:facility(),
+      Format   :: string(),
+      Args     :: list(),
+      Result   :: ok | {error, inet:posix()}.
 
-%%====================================================================
 error_msg(Format) ->
     log(default, #priority{log_level=error}, Format, []).
 
@@ -201,8 +388,26 @@ error_msg(Name, Facility, Format, Args) ->
     log(Name, #priority{facility=Facility, log_level=error}, Format, Args).
 
 
+%% ----
+-spec warning_msg(Format) -> Result when
+      Format   :: string(),
+      Result   :: ok | {error, inet:posix()}.
+-spec warning_msg(Format, Args) -> Result when
+      Format   :: string(),
+      Args     :: list(),
+      Result   :: ok | {error, inet:posix()}.
+-spec warning_msg(Name, Format, Args) -> Result when
+      Name     :: atom(),
+      Format   :: string(),
+      Args     :: list(),
+      Result   :: ok | {error, inet:posix()}.
+-spec warning_msg(Name, Facility, Format, Args) -> Result when
+      Name     :: atom(),
+      Facility :: syslog:facility(),
+      Format   :: string(),
+      Args     :: list(),
+      Result   :: ok | {error, inet:posix()}.
 
-%%====================================================================
 warning_msg(Format) ->
     log(default, #priority{log_level=warning}, Format, []).
 
@@ -215,8 +420,26 @@ warning_msg(Name, Format, Args)->
 warning_msg(Name, Facility, Format, Args) ->
     log(Name, #priority{facility=Facility, log_level=warning}, Format, Args).
 
+%% ----
+-spec notice_msg(Format) -> Result when
+      Format   :: string(),
+      Result   :: ok | {error, inet:posix()}.
+-spec notice_msg(Format, Args) -> Result when
+      Format   :: string(),
+      Args     :: list(),
+      Result   :: ok | {error, inet:posix()}.
+-spec notice_msg(Name, Format, Args) -> Result when
+      Name     :: atom(),
+      Format   :: string(),
+      Args     :: list(),
+      Result   :: ok | {error, inet:posix()}.
+-spec notice_msg(Name, Facility, Format, Args) -> Result when
+      Name     :: atom(),
+      Facility :: syslog:facility(),
+      Format   :: string(),
+      Args     :: list(),
+      Result   :: ok | {error, inet:posix()}.
 
-%%====================================================================
 notice_msg(Format) ->
     log(default, #priority{log_level=notice}, Format, []).
 
@@ -229,8 +452,26 @@ notice_msg(Name, Format, Args)->
 notice_msg(Name, Facility, Format, Args) ->
     log(Name, #priority{facility=Facility, log_level=notice}, Format, Args).
 
+%% ----
+-spec info_msg(Format) -> Result when
+      Format   :: string(),
+      Result   :: ok | {error, inet:posix()}.
+-spec info_msg(Format, Args) -> Result when
+      Format   :: string(),
+      Args     :: list(),
+      Result   :: ok | {error, inet:posix()}.
+-spec info_msg(Name, Format, Args) -> Result when
+      Name     :: atom(),
+      Format   :: string(),
+      Args     :: list(),
+      Result   :: ok | {error, inet:posix()}.
+-spec info_msg(Name, Facility, Format, Args) -> Result when
+      Name     :: atom(),
+      Facility :: syslog:facility(),
+      Format   :: string(),
+      Args     :: list(),
+      Result   :: ok | {error, inet:posix()}.
 
-%%====================================================================
 info_msg(Format) ->
     log(default, #priority{log_level=info}, Format, []).
 
@@ -243,7 +484,26 @@ info_msg(Name, Format, Args)->
 info_msg(Name, Facility, Format, Args) ->
     log(Name, #priority{facility=Facility, log_level=info}, Format, Args).
 
-%%====================================================================
+%% ----
+-spec debug_msg(Format) -> Result when
+      Format   :: string(),
+      Result   :: ok | {error, inet:posix()}.
+-spec debug_msg(Format, Args) -> Result when
+      Format   :: string(),
+      Args     :: list(),
+      Result   :: ok | {error, inet:posix()}.
+-spec debug_msg(Name, Format, Args) -> Result when
+      Name     :: atom(),
+      Format   :: string(),
+      Args     :: list(),
+      Result   :: ok | {error, inet:posix()}.
+-spec debug_msg(Name, Facility, Format, Args) -> Result when
+      Name     :: atom(),
+      Facility :: syslog:facility(),
+      Format   :: string(),
+      Args     :: list(),
+      Result   :: ok | {error, inet:posix()}.
+
 debug_msg(Format) ->
     log(default, #priority{log_level=debug}, Format, []).
 
@@ -256,8 +516,8 @@ debug_msg(Name, Format, Args)->
 debug_msg(Name, Facility, Format, Args) ->
     log(Name, #priority{facility=Facility, log_level=debug}, Format, Args).
 
-%%====================================================================
 
+%%====================================================================
 %% Convenient routines for specifying levels.
 emergency() -> 0. %% system is unusable
 alert()     -> 1. %% action must be taken immediately
@@ -295,15 +555,14 @@ local7()    -> 23. %% reserved for local use
 %% gen_server callbacks.
 %%====================================================================
 init([]) ->
-
     ets:new(syslog, [named_table, protected, {keypos, 2}]),
 
     %% Add default syslog ident to catch messages without ident
     case gen_udp:open(0) of
         {ok, Socket} ->
-            Default_Ident = syslogger_app:get_param(default_ident),
+            Default_Ident    = syslogger_app:get_param(default_ident),
             Default_Facility = syslogger_app:get_param(default_facility),
-            Default_Level = syslogger_app:get_param(default_loglevel),
+            Default_Level    = syslogger_app:get_param(default_loglevel),
             Syslog = #syslog{name       = default,
                              ident      = Default_Ident,
                              udp_socket = Socket,
@@ -316,11 +575,12 @@ init([]) ->
                                           ]},
             ets:insert(syslog, Syslog),
             error_logger:add_report_handler(error_logger_syslog),
-            {ok, #state{}};
+            {ok, []};
         {error, Reason} ->
             {stop, Reason}
     end.
 
+%% ----
 handle_call({add, Name, Ident, Facility, LogLevel, Options}, _From, State) ->
     %% FIXME: check facility and loglevel
     Reply = case ets:lookup(syslog, Name) of
@@ -348,7 +608,8 @@ handle_call({remove, Name}, _From, State) ->
         [Syslog] ->
             ets:delete(syslog, Name),
             gen_udp:close(Syslog#syslog.udp_socket);
-        [] -> ok
+        [] ->
+            ok
     end,
     {reply, ok, State};
 
@@ -367,16 +628,18 @@ handle_call({update, Name, Ident, Facility, LogLevel, Options}, _From, State) ->
             end,
     {reply, Reply, State}.
 
-
+%% ----
 handle_cast(stop, State) ->
     {stop, normal, State};
 handle_cast(_Msg, State) ->
     {noreply, State}.
 
+%% ----
 %% FIXME: handle message from udp socket
 handle_info(_Info, State) ->
     {noreply, State}.
 
+%% ----
 terminate(_Reason, _State) ->
     error_logger:delete_report_handler(error_logger_syslog),
     ets:foldl(fun(Syslog, Acc) ->
@@ -386,7 +649,7 @@ terminate(_Reason, _State) ->
     ets:delete(syslog),
     ok.
 
-
+%% ----
 code_change(_OldVsn, State, _Extra) ->
     {ok, State}.
 
@@ -394,54 +657,46 @@ code_change(_OldVsn, State, _Extra) ->
 %%====================================================================
 %% Internal functions
 %%====================================================================
-get_host(Args) when is_list(Args) ->
-    proplists:get_value(host, Args, syslogger_app:get_param(syslogd_host));
-get_host(_) ->
-    syslogger_app:get_param(syslogd_host).
+get_host(Opts) ->
+    proplists:get_value(host, Opts, syslogger_app:get_param(syslogd_host)).
 
-get_port(Args) when is_list(Args) ->
-    proplists:get_value(port, Args, syslogger_app:get_param(syslogd_port));
-get_port(_) ->
-    syslogger_app:get_param(syslogd_port).
+get_port(Opts) ->
+    proplists:get_value(port, Opts, syslogger_app:get_param(syslogd_port)).
 
-%%====================================================================
+%% ----
 format_prefix(Syslog) ->
     case proplists:get_bool(log_pid, Syslog#syslog.options) of
         true  ->
             %% FIXME: good idea ?
             Pid = case get(logged_pid) of
                       undefined -> self();
-                      P -> P
+                      P         -> P
                   end,
-            Syslog#syslog.ident ++ "[" ++ io_lib:print(Pid) ++ "]: ";
+            [Syslog#syslog.ident, $[, io_lib:print(Pid), $], $:, $\s];
         false ->
-            Syslog#syslog.ident ++ ": "
+            [Syslog#syslog.ident, $:, $\s]
     end.
 
+%% ----
 prepend_line_nb(Prefix, [Line]) ->
-    [Prefix ++ Line];
+    [truncate_line(lists:flatten(Prefix, Line))];
 prepend_line_nb(Prefix, Lines) ->
     Length = length(Lines),
-    Width = length(integer_to_list(Length)),
+    Width  = length(integer_to_list(Length)),
     prepend_line_nb2(Prefix, Lines, 1, length(Lines), Width, []).
 
 prepend_line_nb2(Prefix, [Line | Rest], Current, Total, Width, Result) ->
-    Str = lists:flatten(io_lib:format("~s[~*..0b/~b] ",
-                                      [Prefix, Width, Current, Total])),
-    prepend_line_nb2(Prefix, Rest, Current + 1, Total, Width,
-                     Result ++ [Str ++ Line]);
+    Str0 = io_lib:format("~s[~*..0b/~b] ~s", [Prefix,Width,Current,Total,Line]),
+    Str1 = truncate_line(lists:flatten(Str0)),
+    prepend_line_nb2(Prefix, Rest, Current + 1, Total, Width, [Str1|Result]);
 prepend_line_nb2(_Prefix, [], _Current, _Total, _Width, Result) ->
-    Result.
+    lists:reverse(Result).
 
-truncate_lines(Lines) ->
-    truncate_lines2(Lines, []).
-
-truncate_lines2([Line | Rest], Result) when length(Line) > 1019 ->
-    truncate_lines2(Rest, Result ++ [string:substr(Line, 1, 1019)]);
-truncate_lines2([Line | Rest], Result) ->
-    truncate_lines2(Rest, Result ++ [Line]);
-truncate_lines2([], Result) ->
-    Result.
+%% ----
+truncate_line(Line) when length(Line) > 1019 ->
+    string:substr(Line, 1, 1019);
+truncate_line(Line) ->
+    Line.
 
 %%====================================================================
 send_syslog_message(Name, Priority, Format, []) ->
@@ -451,11 +706,10 @@ send_syslog_message(Name, Priority, Format, Args) ->
     send_syslog_message(Name, Priority, Message).
 
 send_syslog_message(#syslog{}=Syslog, Priority, Message) ->
-    Prefix = format_prefix(Syslog),
-    Lines = string:tokens(Message, "\n"),
-    Prefixed_Lines = prepend_line_nb(Prefix, Lines),
-    Truncated_Lines = truncate_lines(Prefixed_Lines),
-    send_syslog_lines(Syslog, Priority, Truncated_Lines);
+    Prefix        = format_prefix(Syslog),
+    Lines         = string:tokens(Message, "\n"),
+    PrefixedLines = prepend_line_nb(Prefix, Lines),
+    send_syslog_lines(Syslog, Priority, PrefixedLines);
 send_syslog_message(Name, #priority{log_level=LogLevel}=Priority, Message) ->
     case ets:lookup(syslog, Name) of
         [] ->
@@ -465,7 +719,7 @@ send_syslog_message(Name, #priority{log_level=LogLevel}=Priority, Message) ->
             Cur = ?MODULE:LogLevel(),
             if
                 Cur =< Min -> send_syslog_message(Syslog, Priority, Message);
-                true -> ok
+                true       -> ok
             end
     end.
 
@@ -479,10 +733,9 @@ send_syslog_packet(#syslog{udp_socket=Socket, facility=DFacility, options=Opts},
     Priority =
         case Facility of
             undefined -> (?MODULE:DFacility() bsl 3) bor ?MODULE:LogLevel();
-            _ -> (?MODULE:Facility() bsl 3) bor ?MODULE:LogLevel()
+            _         -> (?MODULE:Facility() bsl 3) bor ?MODULE:LogLevel()
         end,
-    Packet = "<" ++ integer_to_list(Priority) ++ ">" ++ Message,
-    Host = get_host(Opts),
-    Port = get_port(Opts),
+    Packet = ["<", integer_to_list(Priority), ">", Message],
+    Host   = get_host(Opts),
+    Port   = get_port(Opts),
     gen_udp:send(Socket, Host, Port, Packet).
-

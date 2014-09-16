@@ -1,13 +1,29 @@
-%%%-------------------------------------------------------------------
-%%% File    : syslog_wrapper.erl
-%%% Author  : Christopher Faulet <christopher@yakaz.com>
-%%% Description :
-%%%
-%%% Created : 19 Mar 2010 by Christopher Faulet <christopher@yakaz.com>
-%%% $Id$
-%%%-------------------------------------------------------------------
+%-
+% Copyright (c) 2012-2014 Yakaz
+% All rights reserved.
+%
+% Redistribution and use in source and binary forms, with or without
+% modification, are permitted provided that the following conditions
+% are met:
+% 1. Redistributions of source code must retain the above copyright
+% notice, this list of conditions and the following disclaimer.
+% 2. Redistributions in binary form must reproduce the above copyright
+% notice, this list of conditions and the following disclaimer in the
+% documentation and/or other materials provided with the distribution.
+%
+% THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS ``AS IS'' AND
+% ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+% IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+% ARE DISCLAIMED. IN NO EVENT SHALL THE AUTHOR OR CONTRIBUTORS BE LIABLE
+% FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+% DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+% OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+% HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+% LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+% OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+% SUCH DAMAGE.
+
 -module(syslog_wrapper).
--vsn('$Revision$ ').
 
 %% API
 -export([
@@ -30,6 +46,8 @@
 %%====================================================================
 %% API
 %%====================================================================
+-spec create(atom(), string(), syslog:loglevel()) -> ok | error.
+
 create(ModName, SyslogName, LogLevel) when is_atom(ModName) ->
     Options = [
                binary,
@@ -53,6 +71,11 @@ create(ModName, SyslogName, LogLevel) when is_atom(ModName) ->
     end.
 
 
+%% ----
+-spec parse_transform(Forms, Options) -> Forms when
+      Forms   :: [erl_parse:abstract_form()],
+      Options :: [compile:option()].
+
 parse_transform(Forms, Options) ->
     case lists:keysearch('MODULE_NAME', 2, Options) of
         {value, {d, 'MODULE_NAME', ModName}} ->
@@ -69,6 +92,96 @@ parse_transform(Forms, Options) ->
 
 
 %%====================================================================
+-spec get_loglevel() -> Level when
+      Level :: syslog:loglevel().
+
+-spec log(Priority, Format, Args) -> Result when
+      Priority :: syslog:priority(),
+      Format   :: string(),
+      Args     :: list(),
+      Result   :: ok | {error, inet:posix()}.
+
+-spec emergency_msg(Format, Args) -> Result when
+      Format   :: string(),
+      Args     :: list(),
+      Result   :: ok | {error, inet:posix()}.
+-spec emergency_msg(Facility, Format, Args) -> Result when
+      Facility :: syslog:facility(),
+      Format   :: string(),
+      Args     :: list(),
+      Result   :: ok | {error, inet:posix()}.
+
+-spec alert_msg(Format, Args) -> Result when
+      Format   :: string(),
+      Args     :: list(),
+      Result   :: ok | {error, inet:posix()}.
+-spec alert_msg(Facility, Format, Args) -> Result when
+      Facility :: syslog:facility(),
+      Format   :: string(),
+      Args     :: list(),
+      Result   :: ok | {error, inet:posix()}.
+
+-spec critical_msg(Format, Args) -> Result when
+      Format   :: string(),
+      Args     :: list(),
+      Result   :: ok | {error, inet:posix()}.
+-spec critical_msg(Facility, Format, Args) -> Result when
+      Facility :: syslog:facility(),
+      Format   :: string(),
+      Args     :: list(),
+      Result   :: ok | {error, inet:posix()}.
+
+-spec error_msg(Format, Args) -> Result when
+      Format   :: string(),
+      Args     :: list(),
+      Result   :: ok | {error, inet:posix()}.
+-spec error_msg(Facility, Format, Args) -> Result when
+      Facility :: syslog:facility(),
+      Format   :: string(),
+      Args     :: list(),
+      Result   :: ok | {error, inet:posix()}.
+
+-spec warning_msg(Format, Args) -> Result when
+      Format   :: string(),
+      Args     :: list(),
+      Result   :: ok | {error, inet:posix()}.
+-spec warning_msg(Facility, Format, Args) -> Result when
+      Facility :: syslog:facility(),
+      Format   :: string(),
+      Args     :: list(),
+      Result   :: ok | {error, inet:posix()}.
+
+-spec notice_msg(Format, Args) -> Result when
+      Format   :: string(),
+      Args     :: list(),
+      Result   :: ok | {error, inet:posix()}.
+-spec notice_msg(Facility, Format, Args) -> Result when
+      Facility :: syslog:facility(),
+      Format   :: string(),
+      Args     :: list(),
+      Result   :: ok | {error, inet:posix()}.
+
+-spec info_msg(Format, Args) -> Result when
+      Format   :: string(),
+      Args     :: list(),
+      Result   :: ok | {error, inet:posix()}.
+-spec info_msg(Facility, Format, Args) -> Result when
+      Facility :: syslog:facility(),
+      Format   :: string(),
+      Args     :: list(),
+      Result   :: ok | {error, inet:posix()}.
+
+-spec debug_msg(Format, Args) -> Result when
+      Format   :: string(),
+      Args     :: list(),
+      Result   :: ok | {error, inet:posix()}.
+-spec debug_msg(Facility, Format, Args) -> Result when
+      Facility :: syslog:facility(),
+      Format   :: string(),
+      Args     :: list(),
+      Result   :: ok | {error, inet:posix()}.
+
+%%====================================================================
 -ifdef(SYSLOG_LOGLEVEL).
 
 -ifndef(SYSLOG_NAME).
@@ -78,6 +191,7 @@ parse_transform(Forms, Options) ->
 get_loglevel() ->
     ?SYSLOG_LOGLEVEL.
 
+%% ----
 log(Priority, Format, Args) ->
     LogLevel = syslog:get_loglevel(),
     case syslog:LogLevel() =< ?SYSLOG_LOGLEVEL of
@@ -157,7 +271,7 @@ debug_msg(_,_,_) -> ok.
 -else.
 
 get_loglevel() ->
-    undefined.
+    notice.
 
 log(_,_,_) -> ok.
 
@@ -186,7 +300,6 @@ debug_msg(_,_) -> ok.
 debug_msg(_,_,_) -> ok.
 
 -endif.
-
 
 
 %%====================================================================
