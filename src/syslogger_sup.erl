@@ -1,4 +1,4 @@
-%-
+%--
 % Copyright (c) 2012-2014 Yakaz
 % All rights reserved.
 %
@@ -48,15 +48,15 @@ start_link() ->
 %% Supervisor callbacks
 %%====================================================================
 init([]) ->
-    RestartStrategy = one_for_one,
-    MaxRestarts = 10,
-    MaxSecondsBetweenRestarts = 1,
+    RestartStrategy        = one_for_one,
+    MaxRestarts            = 10,
+    MaxSecsBetweenRestarts = 1,
 
-    SupFlags = {RestartStrategy, MaxRestarts, MaxSecondsBetweenRestarts},
+    SupFlags = {RestartStrategy, MaxRestarts, MaxSecsBetweenRestarts},
 
-    Restart = permanent,
+    Restart  = permanent,
     Shutdown = 2000,
-    Type = worker,
+    Type     = worker,
 
     AChild = {syslog, {syslog, start_link, []},
               Restart, Shutdown, Type, [syslog]},

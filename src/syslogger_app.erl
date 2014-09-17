@@ -30,7 +30,7 @@
 %% Configuration API.
 -export([
          params_list/0,
-         get_param/1,
+         get_param/1, get_param/2,
          is_param_valid/2,
          set_param/2,
          check_and_set_param/2,
@@ -42,6 +42,7 @@
 %% application(3erl) callbacks.
 -export([
          start/2,
+         pre_stop/1,
          stop/1,
          config_change/3
         ]).
@@ -53,15 +54,24 @@
 %%====================================================================
 %% Configuration API.
 %%====================================================================
--spec params_list() -> [atom()].
+-spec params_list() -> [atom() | {atom(), any()}].
 
 params_list() ->
     [
-     syslogd_host,
-     syslogd_port,
-     default_ident,
-     default_facility,
-     default_loglevel
+     {syslogd_host,     "localhost"},
+     {syslogd_port,     514},
+
+     {default_ident,    "syslogger"},
+     {default_facility, user},
+     {default_loglevel, notice},
+
+     {enable_error_logger,      true},
+     {error_logger_ident,       "error_logger"},
+     {error_logger_facility,    user},
+     {error_logger_loglevel,    info},
+     {error_logger_depth,       -1},
+     {error_logger_line_length, 80},
+     {error_logger_tty,         false}
     ].
 
 %% ----
@@ -71,11 +81,20 @@ get_param(Param) ->
     {ok, Value} = application:get_env(?APPLICATION, Param),
     Value.
 
+-spec get_param(atom(), any()) -> term().
+
+get_param(Param, Default) ->
+    case application:get_env(?APPLICATION, Param) of
+        {ok, Value} ->
+            Value;
+        _ ->
+            set_param(Param, Default),
+            Default
+    end.
+
 %% ----
 -spec is_param_valid(atom(), term()) -> boolean().
 
-is_param_valid(_Param, '$MANDATORY') ->
-    false;
 is_param_valid(syslogd_host, Value) ->
     io_lib:char_list(Value);
 is_param_valid(syslogd_port, Value)  ->
@@ -86,6 +105,20 @@ is_param_valid(default_facility, Value) ->
     syslog:is_facility_valid(Value);
 is_param_valid(default_loglevel, Value) ->
     syslog:is_loglevel_valid(Value);
+is_param_valid(enable_error_logger, Value) ->
+    is_boolean(Value);
+is_param_valid(error_logger_ident, Value) ->
+    io_lib:char_list(Value);
+is_param_valid(error_logger_facility, Value) ->
+    syslog:is_facility_valid(Value);
+is_param_valid(error_logger_loglevel, Value) ->
+    syslog:is_loglevel_valid(Value);
+is_param_valid(error_logger_depth, Value) ->
+    is_integer(Value);
+is_param_valid(error_logger_line_length, Value) ->
+    (is_integer(Value) andalso Value > 0);
+is_param_valid(error_logger_tty, Value) ->
+    is_boolean(Value);
 is_param_valid(_Param, _Value) ->
     false.
 
@@ -111,7 +144,10 @@ check_and_set_param(Param, Value) ->
 -spec show_params() -> ok.
 
 show_params() ->
-    Fun = fun(Param) ->
+    Fun = fun({Param,DefaultValue}) ->
+                  Value = get_param(Param,DefaultValue),
+                  io:format("~s: ~p~n", [Param, Value]);
+             (Param) ->
                   Value = get_param(Param),
                   io:format("~s: ~p~n", [Param, Value])
           end,
@@ -121,7 +157,10 @@ show_params() ->
 -spec check_params() -> boolean().
 
 check_params() ->
-    Fun = fun(Param) ->
+    Fun = fun({Param,DefaultValue}) ->
+                  Value = get_param(Param,DefaultValue),
+                  not is_param_valid(Param, Value);
+             (Param) ->
                   Value = get_param(Param),
                   not is_param_valid(Param, Value)
           end,
@@ -135,10 +174,12 @@ check_params() ->
     end.
 
 %% ----
--spec log_param_errors([atom()]) -> ok.
+-spec log_param_errors([atom() | {atom(), any()}]) -> ok.
 
 log_param_errors([]) ->
     ok;
+log_param_errors([{Param, _}|Rest]) ->
+   log_param_errors([Param|Rest]);
 log_param_errors([syslogd_host = Param | Rest]) ->
     error_logger:warning_msg(
       "~s: invalid value for \"~s\": ~p.~n"
@@ -174,6 +215,55 @@ log_param_errors([default_loglevel = Param | Rest]) ->
       [?APPLICATION, Param, get_param(Param)]
      ),
     log_param_errors(Rest);
+log_param_errors([enable_error_logger = Param | Rest]) ->
+    error_logger:warning_msg(
+      "~s: invalid value for \"~s\": ~p.~n"
+      "It must be a boolean.~n",
+      [?APPLICATION, Param, get_param(Param)]
+     ),
+    log_param_errors(Rest);
+log_param_errors([error_logger_ident = Param | Rest]) ->
+    error_logger:warning_msg(
+      "~s: invalid value for \"~s\": ~p.~n"
+      "It must be a string.~n",
+      [?APPLICATION, Param, get_param(Param)]
+     ),
+    log_param_errors(Rest);
+log_param_errors([error_logger_facility = Param | Rest]) ->
+    error_logger:warning_msg(
+      "~s: invalid value for \"~s\": ~p.~n"
+      "It must be the name of a facility (atom).~n",
+      [?APPLICATION, Param, get_param(Param)]
+     ),
+    log_param_errors(Rest);
+log_param_errors([error_logger_loglevel = Param | Rest]) ->
+    error_logger:warning_msg(
+      "~s: invalid value for \"~s\": ~p.~n"
+      "It must be the name of a level (atom).~n",
+      [?APPLICATION, Param, get_param(Param)]
+     ),
+    log_param_errors(Rest);
+log_param_errors([error_logger_depth = Param | Rest]) ->
+    error_logger:warning_msg(
+      "~s: invalid value for \"~s\": ~p.~n"
+      "It must be an integer.~n",
+      [?APPLICATION, Param, get_param(Param)]
+     ),
+    log_param_errors(Rest);
+log_param_errors([error_logger_line_length = Param | Rest]) ->
+    error_logger:warning_msg(
+      "~s: invalid value for \"~s\": ~p.~n"
+      "It must be a positive integer.~n",
+      [?APPLICATION, Param, get_param(Param)]
+     ),
+    log_param_errors(Rest);
+log_param_errors([error_logger_tty = Param | Rest]) ->
+    error_logger:warning_msg(
+      "~s: invalid value for \"~s\": ~p.~n"
+      "It must be a boolean.~n",
+      [?APPLICATION, Param, get_param(Param)]
+     ),
+    log_param_errors(Rest);
 log_param_errors([Param | Rest]) ->
     error_logger:warning_msg(
       "~s: unknown parameter \"~s\".~n",
@@ -186,43 +276,46 @@ log_param_errors([Param | Rest]) ->
 %% application(3erl) callbacks.
 %%====================================================================
 start(_, _) ->
-    Steps = [
-             check_params
-            ],
-    case do_start(Steps) of
-        {error, Reason, Message} ->
-            Log = case application:get_env(kernel, error_logger) of
-                      {ok, {file, File}} -> "Check log file \""++File++"\".";
-                      {ok, tty}          -> "Check standard output.";
-                      _                  -> "No log configured..."
-                  end,
-            %% The following message won't be visible if Erlang was
-            %% detached from the terminal.
-            io:format(standard_error, "ERROR: ~s~s~n~n", [Message, Log]),
-            error_logger:error_msg(Message),
-            {error, Reason};
-        Ret ->
-            Ret
-    end.
-
--spec do_start(Steps) -> Result when
-      Steps  :: [term()],
-      Result :: {ok, pid()}
-              | ignore
-              | {error, {already_started, pid()} | {shutdown, term()} | term()}
-              | {error, atom(), term()}.
-
-do_start([check_params | Rest]) ->
     case check_params() of
         true ->
-            do_start(Rest);
+            case syslogger_sup:start_link() of
+                {ok, Pid} ->
+                    spawn(fun post_start/0),
+                    {ok, Pid};
+                Else ->
+                    Else
+            end;
         false ->
             Message = io_lib:format("~s: invalid application configuration~n",
                                     [?APPLICATION]),
-            {error, invalid_configuration, Message}
-    end;
-do_start([]) ->
-    syslogger_sup:start_link().
+            error_logger:error_msg(Message),
+            {error, invalid_configuration}
+    end.
+
+%% ----
+post_start() ->
+    case syslogger_app:get_param(enable_error_logger) of
+        true  ->
+            error_logger:add_report_handler(error_logger_syslog),
+            Tty = syslogger_app:get_param(error_logger_tty),
+            error_logger:tty(Tty),
+            case lists:keymember(sasl, 1, application:loaded_applications()) of
+                true  -> ok;
+                false -> application:load(sasl)
+            end,
+            application:set_env(sasl, sasl_error_logger,  Tty),
+            case lists:keymember(sasl, 1, application:which_applications()) of
+                true  -> application:stop(sasl), application:start(sasl);
+                false -> ok
+            end;
+        false ->
+            ok
+    end.
+
+%% ----
+pre_stop(State) ->
+    error_logger:delete_report_handler(error_logger_syslog),
+    State.
 
 %% ----
 stop(_) ->

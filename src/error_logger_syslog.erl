@@ -31,42 +31,62 @@
 -export([init/1, handle_event/2, handle_call/2,
          handle_info/2, terminate/2, code_change/3]).
 
--record(state, {}).
-
+-record(state, {ident       :: string(),
+                level       :: syslog:loglevel(),
+                facility    :: syslog:facility(),
+                depth       :: integer(),
+                line_length :: pos_integer()}).
 
 %%====================================================================
 %% gen_event callbacks
 %%====================================================================
 init([]) ->
-    {ok, #state{}}.
+    Level = syslogger_app:get_param(error_logger_loglevel),
+    S = #state{ident       = syslogger_app:get_param(error_logger_ident),
+               level       = syslog:Level(),
+               facility    = syslogger_app:get_param(error_logger_facility),
+               depth       = syslogger_app:get_param(error_logger_depth),
+               line_length = syslogger_app:get_param(error_logger_line_length)},
 
-handle_event({error, _Gleader, {Pid, Format, Data}}, State) ->
+    syslog:add(?MODULE, S#state.ident, S#state.facility, Level, []),
+    {ok, S}.
+
+handle_event({error, _Gleader, {Pid, Format, Data}}, State)
+  when State#state.level >= 3 ->
     put(logged_pid, Pid),
-    syslog:error_msg(Format, Data),
+    Msg = format_message(error, Format, Data),
+    syslog:error_msg(?MODULE, Msg, []),
     {ok, State};
-handle_event({warning_msg, _Gleader, {Pid, Format, Data}}, State) ->
+handle_event({warning_msg, _Gleader, {Pid, Format, Data}}, State)
+  when State#state.level >= 4 ->
     put(logged_pid, Pid),
-    syslog:warning_msg(Format, Data),
+    Msg = format_message(warning, Format, Data),
+    syslog:warning_msg(?MODULE, Msg, []),
     {ok, State};
-handle_event({info_msg, _Gleader, {Pid, Format, Data}}, State) ->
+handle_event({info_msg, _Gleader, {Pid, Format, Data}}, State)
+  when State#state.level >= 6 ->
     put(logged_pid, Pid),
-    syslog:info_msg(Format, Data),
+    Msg = format_message(info, Format, Data),
+    syslog:info_msg(?MODULE, Msg, []),
     {ok, State};
 
-handle_event({error_report, _Gleader, {Pid, _Type, Report}}, State) ->
+handle_event({error_report, _Gleader, {Pid, Type, Report}}, State)
+  when State#state.level >= 3 ->
     put(logged_pid, Pid),
-    Format = format_report(Report),
-    syslog:error_msg(Format, []),
+    Msg = format_report(Type, Report, State),
+    syslog:error_msg(?MODULE, Msg, []),
     {ok, State};
-handle_event({warning_report, _Gleader, {Pid, _Type, Report}}, State) ->
+handle_event({warning_report, _Gleader, {Pid, Type, Report}}, State)
+  when State#state.level >= 4 ->
     put(logged_pid, Pid),
-    Format = format_report(Report),
-    syslog:warning_msg(Format, []),
+    Msg = format_report(Type, Report, State),
+    syslog:warning_msg(?MODULE, Msg, []),
     {ok, State};
-handle_event({info_report, _Gleader, {Pid, _Type, Report}}, State) ->
+handle_event({info_report, _Gleader, {Pid, Type, Report}}, State)
+  when State#state.level >= 6 ->
     put(logged_pid, Pid),
-    Format = format_report(Report),
-    syslog:info_msg(Format, []),
+    Msg = format_report(Type, Report, State),
+    syslog:info_msg(?MODULE, Msg, []),
     {ok, State};
 
 handle_event(_Event, State) ->
@@ -80,6 +100,7 @@ handle_info(_Info, State) ->
     {ok, State}.
 
 terminate(_Reason, _State) ->
+    syslog:remove(?MODULE),
     ok.
 
 code_change(_OldVsn, State, _Extra) ->
@@ -89,28 +110,54 @@ code_change(_OldVsn, State, _Extra) ->
 %%====================================================================
 %% Internal functions
 %%====================================================================
-format_report(Report) when is_list(Report) ->
-    case is_string(Report) of
-        true  -> Report;
-        false -> format_report2(Report, "", 1000)
+format_message(Type, Format, Args) ->
+    lists:flatten([format_type(Type), io_lib:format(Format, Args)]).
+
+format_report(Type, Report, State) when is_list(Report) ->
+    case io_lib:char_list(Report) of
+        true  -> lists:flatten([format_type(Type), Report]);
+        false -> format_report2(Type, Report, "", State)
     end;
-format_report(Report) ->
-    lists:flatten(io_lib:print(Report, 1, 1000, -1)).
+format_report(Type, Report, State) ->
+    lists:flatten([format_type(Type), io_lib:print(Report, 1,
+                                                   State#state.line_length,
+                                                   State#state.depth)]).
 
 
-format_report2([{Tag, Data} | Rest], Result, LineLength) ->
-    Prefix       = lists:flatten(io_lib:format("    ~p", [Tag])),
-    PrefixLength = length(Prefix) + 2,
-    CurLength    = LineLength - PrefixLength,
-    DataStr      = io_lib:print(Data, PrefixLength, CurLength, -1),
-    Result2      = [Prefix, $:, $\s, DataStr, $\n],
-    format_report2(Rest, [Result2|Result], LineLength);
-format_report2([Term | Rest], Result, LineLength) ->
-    Result2 = [io_lib:print(Term, 1, LineLength, -1), $\n],
-    format_report2(Rest, [Result2|Result], LineLength);
-format_report2([], Result, _LineLength) ->
-    lists:flatten(lists:reverse(Result)).
+format_report2(Type, [{Tag, Data} | Rest], Result, State) ->
+    Prefix       = io_lib:format("    ~p: ", [Tag]),
+    PrefixLength = iolist_size(Prefix) + 1,
+    DataStr      = io_lib:print(Data, PrefixLength,
+                                State#state.line_length,
+                                State#state.depth),
+    Result2      = [Prefix, DataStr, $\n],
+    format_report2(Type, Rest, [Result2|Result], State);
 
-is_string([H | T]) when is_integer(H), H > 1, H < 255 -> is_string(T);
-is_string([])                                         -> true;
-is_string(_)                                          -> false.
+format_report2(Type, [Term | Rest], Result, State) ->
+    Result2 = ["    ", io_lib:print(Term, 1, State#state.line_length,
+                                    State#state.depth), $\n],
+    format_report2(Type, Rest, [Result2|Result], State);
+format_report2(Type, [], Result, _) ->
+    lists:flatten([format_type(Type), lists:reverse(Result)]).
+
+
+format_type(supervisor_report) ->
+    "= SUPERVISOR REPORT ====\n";
+format_type(crash_report) ->
+    "= CRASH REPORT ====\n";
+format_type(progress) ->
+    "= PROGRESS REPORT ====\n";
+format_type(std_error) ->
+    "= ERROR REPORT ====\n";
+format_type(std_warning) ->
+    "= WARNING REPORT ====\n";
+format_type(std_info) ->
+    "= INFO REPORT ====\n";
+format_type(error) ->
+    "ERROR: ";
+format_type(warning) ->
+    "WARNING: ";
+format_type(info) ->
+    "INFO: ";
+format_type(Type) ->
+    io_lib:format("~p: ", [Type]).

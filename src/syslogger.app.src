@@ -13,14 +13,5 @@
                   kernel,
                   stdlib
                  ]},
-  {mod, {syslogger_app, []}},
-  {env, [
-         %% Configuration default values.
-         %% DO NOT EDIT: The final configuration is made in sys.config.
-         {syslogd_host, "localhost"},
-         {syslogd_port, 514},
-         {default_ident, "syslogger"},
-         {default_facility, user},
-         {default_loglevel, notice}
-        ]}
+  {mod, {syslogger_app, []}}
  ]}.

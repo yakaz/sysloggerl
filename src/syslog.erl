@@ -574,7 +574,6 @@ init([]) ->
                                            {port, get_port([])}
                                           ]},
             ets:insert(syslog, Syslog),
-            error_logger:add_report_handler(error_logger_syslog),
             {ok, []};
         {error, Reason} ->
             {stop, Reason}
@@ -641,7 +640,6 @@ handle_info(_Info, State) ->
 
 %% ----
 terminate(_Reason, _State) ->
-    error_logger:delete_report_handler(error_logger_syslog),
     ets:foldl(fun(Syslog, Acc) ->
                       gen_udp:close(Syslog#syslog.udp_socket),
                       Acc
@@ -713,17 +711,23 @@ digit(9) -> "09";
 digit(N) -> integer_to_list(N).
 
 %% ----
-format_prefix(Syslog) ->
-    case proplists:get_bool(log_pid, Syslog#syslog.options) of
+format_prefix(#syslog{facility=DFacility, ident=Ident, options=Opts},
+              #priority{facility=Facility, log_level=LogLevel}) ->
+    Pri = case Facility of
+              undefined -> (?MODULE:DFacility() bsl 3) bor ?MODULE:LogLevel();
+              _         -> (?MODULE:Facility() bsl 3) bor ?MODULE:LogLevel()
+          end,
+    TS  = get_timestamp(),
+    HN  = get_hostname(),
+    case proplists:get_bool(log_pid, Opts) of
         true  ->
-            %% FIXME: good idea ?
-            Pid = case get(logged_pid) of
-                      undefined -> self();
-                      P         -> P
+            Pid = case erase(logged_pid) of
+                      undefined -> io_lib:print(self());
+                      P         -> io_lib:print(P)
                   end,
-            [Syslog#syslog.ident, $[, io_lib:print(Pid), $], $:, $\s];
+            [$<,integer_to_list(Pri),$>,TS,$\s,HN,$\s,Ident,$[,Pid,$],$:,$\s];
         false ->
-            [Syslog#syslog.ident, $:, $\s]
+            [$<,integer_to_list(Pri),$>,TS,$\s,HN,$\s,Ident,$:,$\s]
     end.
 
 %% ----
@@ -736,29 +740,31 @@ prepend_line_nb(Prefix, Lines) ->
 
 prepend_line_nb2(Prefix, [Line | Rest], Current, Total, Width, Result) ->
     Str0 = io_lib:format("~s[~*..0b/~b] ~s", [Prefix,Width,Current,Total,Line]),
-    Str1 = truncate_line(lists:flatten(Str0)),
+    Str1 = truncate_line(Str0),
     prepend_line_nb2(Prefix, Rest, Current + 1, Total, Width, [Str1|Result]);
 prepend_line_nb2(_Prefix, [], _Current, _Total, _Width, Result) ->
     lists:reverse(Result).
 
 %% ----
-truncate_line(Line) when length(Line) > 1019 ->
-    string:substr(Line, 1, 1019);
 truncate_line(Line) ->
-    Line.
+    N = iolist_size(Line),
+    if
+        N  > 1024 -> string:substr(lists:flatten(Line), 1, 1024);
+        true      -> Line
+    end.
 
 %%====================================================================
 send_syslog_message(Name, Priority, Format, []) ->
     send_syslog_message(Name, Priority, Format);
 send_syslog_message(Name, Priority, Format, Args) ->
-    Message = lists:flatten(io_lib_format:fwrite(Format, Args)),
+    Message = lists:flatten(io_lib:format(Format, Args)),
     send_syslog_message(Name, Priority, Message).
 
 send_syslog_message(#syslog{}=Syslog, Priority, Message) ->
-    Prefix        = format_prefix(Syslog),
+    Prefix        = format_prefix(Syslog, Priority),
     Lines         = string:tokens(Message, "\n"),
     PrefixedLines = prepend_line_nb(Prefix, Lines),
-    send_syslog_lines(Syslog, Priority, PrefixedLines);
+    send_syslog_lines(Syslog, PrefixedLines);
 send_syslog_message(Name, #priority{log_level=LogLevel}=Priority, Message) ->
     case ets:lookup(syslog, Name) of
         [] ->
@@ -773,20 +779,11 @@ send_syslog_message(Name, #priority{log_level=LogLevel}=Priority, Message) ->
     end.
 
 
-send_syslog_lines(Syslog, Priority, Lines) ->
-    lists:foreach(fun(L) -> send_syslog_packet(Syslog, Priority, L) end, Lines).
+send_syslog_lines(Syslog, Lines) ->
+    lists:foreach(fun(L) -> send_syslog_packet(Syslog, L) end, Lines).
 
 
-send_syslog_packet(#syslog{udp_socket=Socket, facility=DFacility, options=Opts},
-                   #priority{facility=Facility, log_level=LogLevel}, Message) ->
-    Priority =
-        case Facility of
-            undefined -> (?MODULE:DFacility() bsl 3) bor ?MODULE:LogLevel();
-            _         -> (?MODULE:Facility() bsl 3) bor ?MODULE:LogLevel()
-        end,
-    Packet = ["<", integer_to_list(Priority), ">",
-              get_timestamp(), $\s, get_hostname(), $\s,
-              Message],
-    Host   = get_host(Opts),
-    Port   = get_port(Opts),
+send_syslog_packet(#syslog{udp_socket=Socket, options=Opts}, Packet) ->
+    Host = get_host(Opts),
+    Port = get_port(Opts),
     gen_udp:send(Socket, Host, Port, Packet).
