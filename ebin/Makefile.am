@@ -1,6 +1,6 @@
-beamdir = $(ERLANG_INSTALL_LIB_DIR_syslogger)/ebin
+beamdir = $(ERLANG_INSTALL_LIB_DIR_sysloggerl)/ebin
 
-APP_FILES = syslogger.app syslogger.appup
+APP_FILES = sysloggerl.app sysloggerl.appup
 BEAM_FILES = *.beam
 
 beam_DATA = $(APP_FILES) $(BEAM_FILES)

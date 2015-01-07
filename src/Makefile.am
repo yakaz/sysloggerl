@@ -1,7 +1,7 @@
 include @top_srcdir@/include.mk
 
-MODULES = syslogger_app.erl		\
-	  syslogger_sup.erl		\
+MODULES = sysloggerl_app.erl		\
+	  sysloggerl_sup.erl		\
 	  syslog.erl			\
 	  syslog_wrapper.erl		\
 	  error_logger_syslog.erl
@@ -11,22 +11,22 @@ EBIN_FILES=$(MODULES:%.erl=$(EBIN_DIR)/%.beam)
 
 ERLC_FLAGS = $(ERLC_GENERIC_FLAGS)
 
-erlsrcdir = $(ERLANG_INSTALL_LIB_DIR_syslogger)/src
-dist_erlsrc_DATA = $(MODULES) syslogger.app.src syslogger.appup.src
+erlsrcdir = $(ERLANG_INSTALL_LIB_DIR_sysloggerl)/src
+dist_erlsrc_DATA = $(MODULES) sysloggerl.app.src sysloggerl.appup.src
 
 include @top_srcdir@/erlang_deps.mk
 
-all-local: $(EBIN_DIR)/syslogger.app $(EBIN_DIR)/syslogger.appup $(EBIN_FILES)
+all-local: $(EBIN_DIR)/sysloggerl.app $(EBIN_DIR)/sysloggerl.appup $(EBIN_FILES)
 
 clean-local:
-	$(AM_V_at)rm -f $(EBIN_DIR)/syslogger.app $(EBIN_DIR)/syslogger.appup $(EBIN_FILES)
+	$(AM_V_at)rm -f $(EBIN_DIR)/sysloggerl.app $(EBIN_DIR)/sysloggerl.appup $(EBIN_FILES)
 
 
-$(EBIN_DIR)/syslogger.app: @srcdir@/syslogger.app.src
+$(EBIN_DIR)/sysloggerl.app: @srcdir@/sysloggerl.app.src
 	$(AM_V_GEN)$(AWK) -v src="$(MODULES)"				\
 	"/{vsn, *{cmd,/ {						\
 		line = \$$0;						\
-		sub(/{vsn.*/, \"{vsn, \\\"@SYSLOGGER_VSN@\\\"},\", line);\
+		sub(/{vsn.*/, \"{vsn, \\\"@SYSLOGGERL_VSN@\\\"},\", line);\
 		print line;						\
 		next;							\
         }								\
@@ -50,8 +50,8 @@ $(EBIN_DIR)/syslogger.app: @srcdir@/syslogger.app.src
         }                                                               \
         { print; }" $< > $@
 
-$(EBIN_DIR)/syslogger.appup: @srcdir@/syslogger.appup.src
-	$(AM_V_GEN)$(SED) "s/%VSN%/@SYSLOGGER_VSN@/g" < $< > $@
+$(EBIN_DIR)/sysloggerl.appup: @srcdir@/sysloggerl.appup.src
+	$(AM_V_GEN)$(SED) "s/%VSN%/@SYSLOGGERL_VSN@/g" < $< > $@
 
 $(EBIN_DIR)/%.beam: %.erl
 	$(AM_V_at)$(ERLC) $(ERLC_FLAGS) -M -MF $(@:$(EBIN_DIR)/%.beam=$(DEPDIR)/%.Pbeam) -MT $@ $<

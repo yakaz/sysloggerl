@@ -1,4 +1,4 @@
-Source: erlang-syslogger
+Source: erlang-sysloggerl
 Section: devel
 Priority: optional
 Maintainer: Christopher Faulet <christopher@yakaz.com>
@@ -7,10 +7,10 @@ Build-Depends: debhelper (>= 9), dh-autoreconf, erlang-dev (>= 1:14.b.2),
  erlang-tools
 Standards-Version: 3.9.4
 
-Package: erlang-syslogger
+Package: erlang-sysloggerl
 Architecture: all
 Depends: ${misc:Depends}, ${erlang:Depends}
 Description: Syslog logger for Erlang
- An OTP application for logging messages to a syslog daemon, using UDP
- sockets. It provides a customizable error_logger report handler and supports
- several loggers with different logging options.
+ An pure Erlang/OTP application for logging messages to a syslog daemon, using
+ UDP sockets. It provides a customizable error_logger report handler and
+ supports several loggers with different logging options.

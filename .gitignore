@@ -16,11 +16,8 @@ Makefile
 Makefile.in
 */Makefile
 */Makefile.in
-ebin/syslogger.app
-ebin/syslogger.appup
-
-testsuite/etest
-testsuite/dialyzer
+ebin/sysloggerl.app
+ebin/sysloggerl.appup
 
 # Files produced by Debian package.
 build-stamp
@@ -29,6 +26,6 @@ debian/*.debhelper.log
 debian/*.substvars
 debian/build
 debian/files
-debian/syslogger
+debian/sysloggerl
 debian/*-stamp
 debian/watch

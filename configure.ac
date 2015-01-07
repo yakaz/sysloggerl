@@ -2,10 +2,10 @@ dnl ------------------------------------------------------------------
 dnl Autoconf initialization.
 dnl ------------------------------------------------------------------
 dnl $Id$
-m4_define([VERSION_NUMBER], m4_esyscmd([. ./vsn.mk && printf '%s' ${SYSLOGGER_VSN}]))
-AC_INIT([syslogger], VERSION_NUMBER, [team@yakaz.com])
+m4_define([VERSION_NUMBER], m4_esyscmd([. ./vsn.mk && printf '%s' ${SYSLOGGERL_VSN}]))
+AC_INIT([sysloggerl], VERSION_NUMBER)
 
-AC_CONFIG_SRCDIR([src/syslogger_app.erl])
+AC_CONFIG_SRCDIR([src/sysloggerl_app.erl])
 AC_CONFIG_MACRO_DIR([m4])
 AC_CONFIG_AUX_DIR([ac-aux])
 
@@ -145,9 +145,9 @@ fi
 AC_ERLANG_SUBST_INSTALL_LIB_DIR
 
 . ${srcdir}/vsn.mk
-AC_SUBST(SYSLOGGER_VSN)
+AC_SUBST(SYSLOGGERL_VSN)
 
-AC_ERLANG_SUBST_INSTALL_LIB_SUBDIR(AC_PACKAGE_NAME, ${SYSLOGGER_VSN})
+AC_ERLANG_SUBST_INSTALL_LIB_SUBDIR(AC_PACKAGE_NAME, ${SYSLOGGERL_VSN})
 
 
 dnl ------------------------------------------------------------------
@@ -156,12 +156,11 @@ dnl ------------------------------------------------------------------
 AC_ERLANG_CHECK_LIB([kernel],,   [AC_MSG_ERROR(["kernel" Erlang application not found.])])
 AC_ERLANG_CHECK_LIB([stdlib],,   [AC_MSG_ERROR(["stdlib" Erlang application not found.])])
 
-
 dnl ------------------------------------------------------------------
 dnl Finale substitutions.
 dnl ------------------------------------------------------------------
-exp_ERLANG_INSTALL_LIB_DIR_syslogger=`expand_var ERLANG_INSTALL_LIB_DIR_syslogger`
-AC_SUBST(exp_ERLANG_INSTALL_LIB_DIR_syslogger)
+exp_ERLANG_INSTALL_LIB_DIR_sysloggerl=`expand_var ERLANG_INSTALL_LIB_DIR_sysloggerl`
+AC_SUBST(exp_ERLANG_INSTALL_LIB_DIR_sysloggerl)
 
 
 dnl ------------------------------------------------------------------
@@ -170,27 +169,25 @@ dnl ------------------------------------------------------------------
 AC_SUBST([CONFIG_STATUS_DEPENDENCIES], ['$(top_srcdir)/vsn.mk'])
 
 echo
-AM_CONFIG_HEADER([config.h])
 AC_CONFIG_FILES([
     src/Makefile
     ebin/Makefile
-    priv/Makefile
     Makefile
 ])
 AC_OUTPUT
-
 
 dnl --------------------------------------------------
 dnl Configuration report
 dnl --------------------------------------------------
 echo
-COLORED_ECHO([ %B== ${PACKAGE_NAME} ${PACKAGE_VERSION}${APP_DISTSUFFIX} ==%b])
+COLORED_ECHO([ %B== ${PACKAGE_NAME} ${PACKAGE_VERSION} ==%b])
 echo
 COLORED_ECHO([Configuration:])
-COLORED_ECHO([    Prefix:               ${prefix}])
-COLORED_ECHO([    Application dir.:     ${exp_ERLANG_INSTALL_LIB_DIR_syslogger}])
+COLORED_ECHO([ %BApplication dir.%b:     ${exp_ERLANG_INSTALL_LIB_DIR_sysloggerl}])
 echo
-COLORED_ECHO([    Erlang emulator:      ${ERL}])
-COLORED_ECHO([    Erlang compiler:      ${ERLC}])
-COLORED_ECHO([    Erlang interpreter:   ${ESCRIPT}])
+COLORED_ECHO([ %BErlang root dir%b:    ${ERLANG_ROOT_DIR}])
+COLORED_ECHO([ %BErlang lib dir%b:     ${ERLANG_LIB_DIR}])
+COLORED_ECHO([ %BErlang emulator%b:    ${ERL}])
+COLORED_ECHO([ %BErlang compiler%b:    ${ERLC}])
+COLORED_ECHO([ %BErlang interpreter%b: ${ESCRIPT}])
 echo

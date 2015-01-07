@@ -10,7 +10,7 @@ EXTRA_DIST = README.md AUTHORS COPYING vsn.mk include.mk erlang_deps.mk	\
 dialyzer: all
 	$(AM_V_at)if [ -z $(DIALYZER) ]; then					\
 		echo "  SKIP    dialyzer";					\
-		echo "dialyzer(1) not found. Fill the DIALYZER variable with \
+		echo "dialyzer(1) not found. Fill the DIALYZER variable with 	\
 dialyzer(1) path if you want to use it."; 					\
 		echo;								\
 	else									\

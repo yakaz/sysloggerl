@@ -1,5 +1,5 @@
 %-
-% Copyright (c) 2012-2014 Yakaz
+% Copyright (c) 2012-2015 Yakaz
 % All rights reserved.
 %
 % Redistribution and use in source and binary forms, with or without
@@ -38,7 +38,7 @@
          is_facility_valid/1,
          is_loglevel_valid/1,
 
-         log/3, log/4,
+         log/3, log/4, log/5,
 
          emergency_msg/1, emergency_msg/2, emergency_msg/3, emergency_msg/4,
          alert_msg/1,     alert_msg/2,     alert_msg/3,     alert_msg/4,
@@ -109,11 +109,6 @@
 %%====================================================================
 %% API
 %%====================================================================
--spec start_link() -> Result when
-      Result :: {ok, pid()}
-              | ignore
-              | {error, {already_started, pid()} | term()}.
-
 start_link() ->
     gen_server:start_link({local, ?MODULE}, ?MODULE, [], []).
 
@@ -201,7 +196,7 @@ get_facility(#priority{facility=Facility}) -> Facility.
 get_loglevel(#priority{log_level=LogLevel}) -> LogLevel.
 
 %% ----
--spec is_facility_valid(term()) -> boolean().
+-spec is_facility_valid(any()) -> boolean().
 
 is_facility_valid(kern)     -> true;
 is_facility_valid(user)     -> true;
@@ -227,7 +222,7 @@ is_facility_valid(_)        -> false.
 
 
 %% ----
--spec is_loglevel_valid(term()) -> boolean().
+-spec is_loglevel_valid(any()) -> boolean().
 
 is_loglevel_valid(emergency) -> true;
 is_loglevel_valid(alert)     -> true;
@@ -251,13 +246,22 @@ is_loglevel_valid(_)         -> false.
       Format   :: string(),
       Arg      :: list(),
       Result   :: ok | {error, inet:posix()}.
+-spec log(Name, LogLevel, Facility, Format, Arg) -> Result when
+      Name     :: atom(),
+      LogLevel :: syslog:log_level(),
+      Facility :: syslog:facility(),
+      Format   :: string(),
+      Arg      :: list(),
+      Result   :: ok | {error, inet:posix()}.
 
 log(#priority{}=Priority, Format, Args) ->
     log(default, Priority, Format, Args).
 
-log(Name, #priority{}=Priority, Format, Args) when is_list(Format),
-                                                   is_list(Args) ->
+log(Name, #priority{}=Priority, Format, Args) ->
     send_syslog_message(Name, Priority, Format, Args).
+
+log(Name, LogLevel, Facility, Format, Args) ->
+    log(Name, #priority{log_level=LogLevel, facility=Facility}, Format, Args).
 
 %% ----
 -spec emergency_msg(Format) -> Result when
@@ -560,9 +564,9 @@ init([]) ->
     %% Add default syslog ident to catch messages without ident
     case gen_udp:open(0) of
         {ok, Socket} ->
-            Default_Ident    = syslogger_app:get_param(default_ident),
-            Default_Facility = syslogger_app:get_param(default_facility),
-            Default_Level    = syslogger_app:get_param(default_loglevel),
+            Default_Ident    = sysloggerl_app:get_param(default_ident),
+            Default_Facility = sysloggerl_app:get_param(default_facility),
+            Default_Level    = sysloggerl_app:get_param(default_loglevel),
             Syslog = #syslog{name       = default,
                              ident      = Default_Ident,
                              udp_socket = Socket,
@@ -581,7 +585,6 @@ init([]) ->
 
 %% ----
 handle_call({add, Name, Ident, Facility, LogLevel, Options}, _From, State) ->
-    %% FIXME: check facility and loglevel
     Reply = case ets:lookup(syslog, Name) of
                 [] ->
                     case gen_udp:open(0) of
@@ -613,7 +616,6 @@ handle_call({remove, Name}, _From, State) ->
     {reply, ok, State};
 
 handle_call({update, Name, Ident, Facility, LogLevel, Options}, _From, State) ->
-    %% FIXME: check facility and loglevel
     Reply = case ets:lookup(syslog, Name) of
                 [] ->
                     {error, not_found};
@@ -634,7 +636,6 @@ handle_cast(_Msg, State) ->
     {noreply, State}.
 
 %% ----
-%% FIXME: handle message from udp socket
 handle_info(_Info, State) ->
     {noreply, State}.
 
@@ -656,10 +657,12 @@ code_change(_OldVsn, State, _Extra) ->
 %% Internal functions
 %%====================================================================
 get_host(Opts) ->
-    proplists:get_value(host, Opts, syslogger_app:get_param(syslogd_host)).
+    proplists:get_value(host, Opts,
+                        sysloggerl_app:get_param(default_syslog_host)).
 
 get_port(Opts) ->
-    proplists:get_value(port, Opts, syslogger_app:get_param(syslogd_port)).
+    proplists:get_value(port, Opts,
+                        sysloggerl_app:get_param(default_syslog_port)).
 
 get_hostname() ->
     case node() of

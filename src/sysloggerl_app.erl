@@ -1,5 +1,5 @@
 %-
-% Copyright (c) 2012-2014 Yakaz
+% Copyright (c) 2012-2015 Yakaz
 % All rights reserved.
 %
 % Redistribution and use in source and binary forms, with or without
@@ -23,7 +23,7 @@
 % OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
 % SUCH DAMAGE.
 
--module(syslogger_app).
+-module(sysloggerl_app).
 
 -behaviour(application).
 
@@ -48,7 +48,7 @@
         ]).
 
 -ifndef(APPLICATION).
--define(APPLICATION, syslogger).
+-define(APPLICATION, sysloggerl).
 -endif.
 
 %%====================================================================
@@ -58,12 +58,11 @@
 
 params_list() ->
     [
-     {syslogd_host,     "localhost"},
-     {syslogd_port,     514},
-
-     {default_ident,    "syslogger"},
-     {default_facility, user},
-     {default_loglevel, notice},
+     {default_syslog_host, "localhost"},
+     {default_syslog_port, 514},
+     {default_ident,       "sysloggerl"},
+     {default_facility,    user},
+     {default_loglevel,    notice},
 
      {enable_error_logger,      true},
      {error_logger_ident,       "error_logger"},
@@ -75,13 +74,13 @@ params_list() ->
     ].
 
 %% ----
--spec get_param(atom()) -> term().
+-spec get_param(atom()) -> any().
 
 get_param(Param) ->
     {ok, Value} = application:get_env(?APPLICATION, Param),
     Value.
 
--spec get_param(atom(), any()) -> term().
+-spec get_param(atom(), any()) -> any().
 
 get_param(Param, Default) ->
     case application:get_env(?APPLICATION, Param) of
@@ -93,11 +92,11 @@ get_param(Param, Default) ->
     end.
 
 %% ----
--spec is_param_valid(atom(), term()) -> boolean().
+-spec is_param_valid(atom(), any()) -> boolean().
 
-is_param_valid(syslogd_host, Value) ->
+is_param_valid(default_syslog_host, Value) ->
     io_lib:char_list(Value);
-is_param_valid(syslogd_port, Value)  ->
+is_param_valid(default_syslog_port, Value)  ->
     (is_integer(Value) andalso Value > 0);
 is_param_valid(default_ident, Value) ->
     io_lib:char_list(Value);
@@ -123,13 +122,13 @@ is_param_valid(_Param, _Value) ->
     false.
 
 %% ----
--spec set_param(atom(), term()) -> ok.
+-spec set_param(atom(), any()) -> ok.
 
 set_param(Param, Value) ->
     application:set_env(?APPLICATION, Param, Value).
 
 %% ----
--spec check_and_set_param(atom(), term()) -> ok.
+-spec check_and_set_param(atom(), any()) -> ok.
 
 check_and_set_param(Param, Value) ->
     %% If the value is invalid, this function logs an error through
@@ -180,14 +179,14 @@ log_param_errors([]) ->
     ok;
 log_param_errors([{Param, _}|Rest]) ->
    log_param_errors([Param|Rest]);
-log_param_errors([syslogd_host = Param | Rest]) ->
+log_param_errors([default_syslog_host = Param | Rest]) ->
     error_logger:warning_msg(
       "~s: invalid value for \"~s\": ~p.~n"
       "It must be a hostname (string).~n",
       [?APPLICATION, Param, get_param(Param)]
      ),
     log_param_errors(Rest);
-log_param_errors([syslogd_port = Param | Rest]) ->
+log_param_errors([default_syslog_port = Param | Rest]) ->
     error_logger:warning_msg(
       "~s: invalid value for \"~s\": ~p.~n"
       "It must be an UDP port number (positive integer).~n",
@@ -278,7 +277,7 @@ log_param_errors([Param | Rest]) ->
 start(_, _) ->
     case check_params() of
         true ->
-            case syslogger_sup:start_link() of
+            case sysloggerl_sup:start_link() of
                 {ok, Pid} ->
                     spawn(fun post_start/0),
                     {ok, Pid};
@@ -294,10 +293,10 @@ start(_, _) ->
 
 %% ----
 post_start() ->
-    case syslogger_app:get_param(enable_error_logger) of
+    case sysloggerl_app:get_param(enable_error_logger) of
         true  ->
             error_logger:add_report_handler(error_logger_syslog),
-            Tty = syslogger_app:get_param(error_logger_tty),
+            Tty = sysloggerl_app:get_param(error_logger_tty),
             error_logger:tty(Tty),
             case lists:keymember(sasl, 1, application:loaded_applications()) of
                 true  -> ok;

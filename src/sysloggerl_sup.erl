@@ -1,5 +1,5 @@
 %--
-% Copyright (c) 2012-2014 Yakaz
+% Copyright (c) 2012-2015 Yakaz
 % All rights reserved.
 %
 % Redistribution and use in source and binary forms, with or without
@@ -23,7 +23,7 @@
 % OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
 % SUCH DAMAGE.
 
--module(syslogger_sup).
+-module(sysloggerl_sup).
 
 -behaviour(supervisor).
 
@@ -36,13 +36,9 @@
 %%====================================================================
 %% API functions
 %%====================================================================
--spec start_link() -> Result when
-      Result :: {ok, pid()}
-              | ignore
-              | {error, {already_started, pid()} | {shutdown, term()} | term()}.
-
 start_link() ->
     supervisor:start_link({local, ?MODULE}, ?MODULE, []).
+
 
 %%====================================================================
 %% Supervisor callbacks

@@ -1,5 +1,5 @@
 %-
-% Copyright (c) 2012-2014 Yakaz
+% Copyright (c) 2012-2015 Yakaz
 % All rights reserved.
 %
 % Redistribution and use in source and binary forms, with or without
@@ -41,12 +41,12 @@
 %% gen_event callbacks
 %%====================================================================
 init([]) ->
-    Level = syslogger_app:get_param(error_logger_loglevel),
-    S = #state{ident       = syslogger_app:get_param(error_logger_ident),
-               level       = syslog:Level(),
-               facility    = syslogger_app:get_param(error_logger_facility),
-               depth       = syslogger_app:get_param(error_logger_depth),
-               line_length = syslogger_app:get_param(error_logger_line_length)},
+    Level = sysloggerl_app:get_param(error_logger_loglevel),
+    S = #state{ident      = sysloggerl_app:get_param(error_logger_ident),
+               level      = syslog:Level(),
+               facility   = sysloggerl_app:get_param(error_logger_facility),
+               depth      = sysloggerl_app:get_param(error_logger_depth),
+               line_length= sysloggerl_app:get_param(error_logger_line_length)},
 
     syslog:add(?MODULE, S#state.ident, S#state.facility, Level, []),
     {ok, S}.

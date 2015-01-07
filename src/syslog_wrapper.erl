@@ -1,5 +1,5 @@
 %-
-% Copyright (c) 2012-2014 Yakaz
+% Copyright (c) 2012-2015 Yakaz
 % All rights reserved.
 %
 % Redistribution and use in source and binary forms, with or without
@@ -306,7 +306,7 @@ debug_msg(_,_,_) -> ok.
 %% Internal functions
 %%====================================================================
 get_srcfile() ->
-    case code:lib_dir(syslogger, src) of
+    case code:lib_dir(sysloggerl, src) of
         {error, bad_name} ->
             SrcFile = proplists:get_value(source,
                                           ?MODULE:module_info(compile)),
