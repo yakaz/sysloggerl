@@ -27,9 +27,12 @@
 
 -behaviour(gen_event).
 
+-include("sysloggerl.hrl").
+
 %% gen_event callbacks
 -export([init/1, handle_event/2, handle_call/2,
          handle_info/2, terminate/2, code_change/3]).
+
 
 -record(state, {ident       :: string(),
                 level       :: syslog:loglevel(),
@@ -47,43 +50,43 @@ init([]) ->
                facility   = sysloggerl_app:get_param(error_logger_facility),
                depth      = sysloggerl_app:get_param(error_logger_depth),
                line_length= sysloggerl_app:get_param(error_logger_line_length)},
-
-    syslog:add(?MODULE, S#state.ident, S#state.facility, Level, []),
+    Prio = syslog:priority(S#state.facility, Level),
+    syslog:set(?MODULE, S#state.ident, Prio, []),
     {ok, S}.
 
 handle_event({error, _Gleader, {Pid, Format, Data}}, State)
-  when State#state.level >= 3 ->
+  when State#state.level >= ?SYSLOG_LOGLEVEL_ERROR ->
     put(logged_pid, Pid),
     Msg = format_message(error, Format, Data),
     syslog:error_msg(?MODULE, Msg, []),
     {ok, State};
 handle_event({warning_msg, _Gleader, {Pid, Format, Data}}, State)
-  when State#state.level >= 4 ->
+  when State#state.level >= ?SYSLOG_LOGLEVEL_WARNING ->
     put(logged_pid, Pid),
     Msg = format_message(warning, Format, Data),
     syslog:warning_msg(?MODULE, Msg, []),
     {ok, State};
 handle_event({info_msg, _Gleader, {Pid, Format, Data}}, State)
-  when State#state.level >= 6 ->
+  when State#state.level >= ?SYSLOG_LOGLEVEL_INFO ->
     put(logged_pid, Pid),
     Msg = format_message(info, Format, Data),
     syslog:info_msg(?MODULE, Msg, []),
     {ok, State};
 
 handle_event({error_report, _Gleader, {Pid, Type, Report}}, State)
-  when State#state.level >= 3 ->
+  when State#state.level >= ?SYSLOG_LOGLEVEL_ERROR ->
     put(logged_pid, Pid),
     Msg = format_report(Type, Report, State),
     syslog:error_msg(?MODULE, Msg, []),
     {ok, State};
 handle_event({warning_report, _Gleader, {Pid, Type, Report}}, State)
-  when State#state.level >= 4 ->
+  when State#state.level >= ?SYSLOG_LOGLEVEL_WARNING ->
     put(logged_pid, Pid),
     Msg = format_report(Type, Report, State),
     syslog:warning_msg(?MODULE, Msg, []),
     {ok, State};
 handle_event({info_report, _Gleader, {Pid, Type, Report}}, State)
-  when State#state.level >= 6 ->
+  when State#state.level >= ?SYSLOG_LOGLEVEL_INFO ->
     put(logged_pid, Pid),
     Msg = format_report(Type, Report, State),
     syslog:info_msg(?MODULE, Msg, []),
@@ -100,7 +103,7 @@ handle_info(_Info, State) ->
     {ok, State}.
 
 terminate(_Reason, _State) ->
-    syslog:remove(?MODULE),
+    syslog:unset(?MODULE),
     ok.
 
 code_change(_OldVsn, State, _Extra) ->

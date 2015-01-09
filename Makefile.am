@@ -1,7 +1,7 @@
 ACLOCAL_FLAGS = -I m4
 ACLOCAL_AMFLAGS = -I m4
 
-SUBDIRS = src ebin
+SUBDIRS = src ebin include
 
 EXTRA_DIST = README.md AUTHORS COPYING vsn.mk include.mk erlang_deps.mk	\
 	     debian/changelog debian/compat debian/control 		\

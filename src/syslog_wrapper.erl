@@ -184,6 +184,9 @@ parse_transform(Forms, Options) ->
 %%====================================================================
 -ifdef(SYSLOG_LOGLEVEL).
 
+
+-include_lib("sysloggerl/include/sysloggerl.hrl").
+
 -ifndef(SYSLOG_NAME).
 -define(SYSLOG_NAME, default).
 -endif.
@@ -193,78 +196,94 @@ get_loglevel() ->
 
 %% ----
 log(Priority, Format, Args) ->
-    LogLevel = syslog:get_loglevel(),
+    LogLevel = syslog:get_loglevel(Priority),
     case syslog:LogLevel() =< ?SYSLOG_LOGLEVEL of
         true  -> syslog:log(?SYSLOG_NAME, Priority, Format, Args);
         false -> ok
     end.
 
-emergency_msg(Format, Args) when ?SYSLOG_LOGLEVEL >= 0 ->
+emergency_msg(Format, Args)
+  when ?SYSLOG_LOGLEVEL >= ?SYSLOG_LOGLEVEL_EMERGENCY ->
     syslog:emergency_msg(?SYSLOG_NAME, Format, Args);
 emergency_msg(_,_) -> ok.
 
-emergency_msg(Facility, Format, Args) when ?SYSLOG_LOGLEVEL >= 0 ->
+emergency_msg(Facility, Format, Args)
+  when ?SYSLOG_LOGLEVEL >= ?SYSLOG_LOGLEVEL_EMERGENCY ->
     syslog:emergency_msg(?SYSLOG_NAME, Facility, Format, Args);
 emergency_msg(_,_,_) -> ok.
 
 %% --
-alert_msg(Format, Args) when ?SYSLOG_LOGLEVEL >= 1 ->
+alert_msg(Format, Args)
+  when ?SYSLOG_LOGLEVEL >= ?SYSLOG_LOGLEVEL_ALERT ->
     syslog:alert_msg(?SYSLOG_NAME, Format, Args);
 alert_msg(_,_) -> ok.
 
-alert_msg(Facility, Format, Args) when ?SYSLOG_LOGLEVEL >= 1 ->
+alert_msg(Facility, Format, Args)
+  when ?SYSLOG_LOGLEVEL >= ?SYSLOG_LOGLEVEL_ALERT ->
     syslog:alert_msg(?SYSLOG_NAME, Facility, Format, Args);
 alert_msg(_,_,_) -> ok.
 
 %% --
-critical_msg(Format, Args) when ?SYSLOG_LOGLEVEL >= 2 ->
+critical_msg(Format, Args)
+  when ?SYSLOG_LOGLEVEL >= ?SYSLOG_LOGLEVEL_CRITICAL ->
     syslog:critical_msg(?SYSLOG_NAME, Format, Args);
 critical_msg(_,_) -> ok.
 
-critical_msg(Facility, Format, Args) when ?SYSLOG_LOGLEVEL >= 2 ->
+critical_msg(Facility, Format, Args)
+  when ?SYSLOG_LOGLEVEL >= ?SYSLOG_LOGLEVEL_CRITICAL ->
     syslog:critical_msg(?SYSLOG_NAME, Facility, Format, Args);
 critical_msg(_,_,_) -> ok.
 
 %% --
-error_msg(Format, Args) when ?SYSLOG_LOGLEVEL >= 3 ->
+error_msg(Format, Args)
+  when ?SYSLOG_LOGLEVEL >= ?SYSLOG_LOGLEVEL_ERROR ->
     syslog:error_msg(?SYSLOG_NAME, Format, Args);
 error_msg(_,_) -> ok.
 
-error_msg(Facility, Format, Args) when ?SYSLOG_LOGLEVEL >= 3 ->
+error_msg(Facility, Format, Args)
+  when ?SYSLOG_LOGLEVEL >= ?SYSLOG_LOGLEVEL_ERROR ->
     syslog:error_msg(?SYSLOG_NAME, Facility, Format, Args);
 error_msg(_,_,_) -> ok.
 
 %% --
-warning_msg(Format, Args) when ?SYSLOG_LOGLEVEL >= 4 ->
+warning_msg(Format, Args)
+  when ?SYSLOG_LOGLEVEL >= ?SYSLOG_LOGLEVEL_WARNING ->
     syslog:warning_msg(?SYSLOG_NAME, Format, Args);
 warning_msg(_,_) -> ok.
 
-warning_msg(Facility, Format, Args) when ?SYSLOG_LOGLEVEL >= 4 ->
+warning_msg(Facility, Format, Args)
+  when ?SYSLOG_LOGLEVEL >= ?SYSLOG_LOGLEVEL_WARNING ->
     syslog:warning_msg(?SYSLOG_NAME, Facility, Format, Args);
 warning_msg(_,_,_) -> ok.
 
 %% --
-notice_msg(Format, Args) when ?SYSLOG_LOGLEVEL >= 5 ->
+notice_msg(Format, Args)
+  when ?SYSLOG_LOGLEVEL >= ?SYSLOG_LOGLEVEL_NOTICE ->
     syslog:notice_msg(?SYSLOG_NAME, Format, Args);
 notice_msg(_,_) -> ok.
 
-notice_msg(Facility, Format, Args) when ?SYSLOG_LOGLEVEL >= 5 ->
+notice_msg(Facility, Format, Args)
+  when ?SYSLOG_LOGLEVEL >= ?SYSLOG_LOGLEVEL_NOTICE ->
     syslog:notice_msg(?SYSLOG_NAME, Facility, Format, Args);
 notice_msg(_,_,_) -> ok.
 
-info_msg(Format, Args) when ?SYSLOG_LOGLEVEL >= 6 ->
+info_msg(Format, Args)
+  when ?SYSLOG_LOGLEVEL >= ?SYSLOG_LOGLEVEL_INFO ->
     syslog:info_msg(?SYSLOG_NAME, Format, Args);
 info_msg(_,_) -> ok.
 
-info_msg(Facility, Format, Args) when ?SYSLOG_LOGLEVEL >= 6 ->
+info_msg(Facility, Format, Args)
+  when ?SYSLOG_LOGLEVEL >= ?SYSLOG_LOGLEVEL_INFO ->
     syslog:info_msg(?SYSLOG_NAME, Facility, Format, Args);
 info_msg(_,_,_) -> ok.
 
-debug_msg(Format, Args) when ?SYSLOG_LOGLEVEL >= 7 ->
+debug_msg(Format, Args)
+  when ?SYSLOG_LOGLEVEL >= ?SYSLOG_LOGLEVEL_DEBUG ->
     syslog:debug_msg(?SYSLOG_NAME, Format, Args);
 debug_msg(_,_) -> ok.
 
-debug_msg(Facility, Format, Args) when ?SYSLOG_LOGLEVEL >= 7 ->
+debug_msg(Facility, Format, Args)
+  when ?SYSLOG_LOGLEVEL >= ?SYSLOG_LOGLEVEL_DEBUG ->
     syslog:debug_msg(?SYSLOG_NAME, Facility, Format, Args);
 debug_msg(_,_,_) -> ok.
 

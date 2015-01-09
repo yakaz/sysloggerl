@@ -25,20 +25,25 @@
 
 -module(syslog).
 
+
+-include("sysloggerl.hrl").
+
 %% API
 -export([
          start_link/0,
          stop/0,
-         add/5,
-         remove/1,
-         update/5,
+         set/4,
+         unset/1,
+         loggers/0,
+         logger/1,
+
          priority/2,
-         get_facility/1,
-         get_loglevel/1,
+         set_facility/2, get_facility/1,
+         set_loglevel/2, get_loglevel/1,
          is_facility_valid/1,
          is_loglevel_valid/1,
 
-         log/3, log/4, log/5,
+         log/2, log/3, log/4,
 
          emergency_msg/1, emergency_msg/2, emergency_msg/3, emergency_msg/4,
          alert_msg/1,     alert_msg/2,     alert_msg/3,     alert_msg/4,
@@ -84,7 +89,7 @@
 
 
 %% ----
--export_type([facility/0, loglevel/0, priority/0]).
+-export_type([facility/0, loglevel/0, priority/0, logger/0]).
 
 -type facility() :: kern   | user   | mail   | daemon | auth     | syslog
                   | lpr    | news   | uucp   | cron   | authpriv | ftp
@@ -94,17 +99,9 @@
 -type loglevel() :: emergency | alert | critical | error | warning | notice
                   | info      | debug.
 
--record(syslog,   {name       :: atom(),
-                   ident      :: string(),
-                   udp_socket :: inet:socket(),
-                   facility   :: syslog:facility(),
-                   log_level  :: syslog:loglevel(),
-                   options    :: proplists:proplist()}).
+-type priority() :: #priority{}.
 
--record(priority, {facility  :: syslog:facility(),
-                   log_level :: syslog:loglevel()}).
-
--opaque priority() :: #priority{}.
+-type logger() :: #logger{}.
 
 %%====================================================================
 %% API
@@ -119,61 +116,53 @@ stop() ->
     gen_server:cast(?MODULE, stop).
 
 %% ----
--spec add(Name, Ident, Facility, LogLevel, Options) -> Result when
+-spec set(Name, Ident, Priority, Options) -> Result when
       Name     :: atom(),
       Ident    :: string(),
-      Facility :: syslog:facility(),
-      LogLevel :: syslog:loglevel(),
+      Priority :: syslog:priority(),
       Options  :: proplists:proplist(),
       Result   :: {ok, inet:socket()}
-                | {error, already_exists | invalid_facility | invalid_loglevel}
+                | {error, invalid_facility | invalid_loglevel}
                 | {error, inet:posix()}.
 
-add(Name, Ident, Facility, LogLevel, Options) ->
-    case {is_facility_valid(Facility), is_loglevel_valid(LogLevel)} of
-        {true, true} ->
-            gen_server:call(?MODULE,
-                            {add, Name, Ident, Facility, LogLevel, Options});
-        {false, _} ->
-            {error, invalid_facility};
-        {_,  false} ->
-            {error, invalid_loglevel}
-    end.
+set(Name, Ident, Priority, Options) ->
+    gen_server:call(?MODULE, {set, Name, Ident, Priority, Options}).
 
 %% ----
--spec remove(atom()) -> ok.
+-spec unset(atom()) -> ok.
 
-remove(Name) ->
-    gen_server:call(?MODULE, {remove,Name}).
+unset(Name) ->
+    gen_server:call(?MODULE, {unset, Name}).
 
 %% ----
--spec update(Name, Ident, Facility, LogLevel, Options) -> Result when
-      Name     :: atom(),
-      Ident    :: string(),
-      Facility :: syslog:facility(),
-      LogLevel :: syslog:loglevel(),
-      Options  :: proplists:proplist(),
-      Result   :: {ok, inet:socket()}
-                | {error, not_found | invalid_facility | invalid_loglevel}.
+-spec loggers() -> [syslog:logger()].
 
-update(Name, Ident, Facility, LogLevel, Options) ->
-    case {is_facility_valid(Facility), is_loglevel_valid(LogLevel)} of
-        {true, true} ->
-            gen_server:call(?MODULE,
-                            {update, Name, Ident, Facility, LogLevel, Options});
-        {false, _} ->
-            {error, invalid_facility};
-        {_,  false} ->
-            {error, invalid_loglevel}
+loggers() ->
+    ets:tab2list(syslog_loggers).
+
+%% ----
+-spec logger(Name) -> Result when
+      Name   :: atom(),
+      Result :: syslog:logger() | not_found.
+
+logger(Name) ->
+    case ets:lookup(syslog_loggers, Name) of
+        []       -> not_found;
+        [Logger] -> Logger
     end.
 
 %% ----
 -spec priority(Facility, LogLevel) -> Result when
-      Facility :: syslog:facility(),
+      Facility :: syslog:facility() | undefined,
       LogLevel :: syslog:loglevel(),
       Result   :: syslog:priority()
                 | {error, invalid_facility | invalid_loglevel}.
 
+priority(undefined, LogLevel) ->
+    case is_loglevel_valid(LogLevel) of
+        true  -> #priority{log_level=LogLevel};
+        false -> {error, invalid_loglevel}
+    end;
 priority(Facility, LogLevel) ->
     case {is_facility_valid(Facility), is_loglevel_valid(LogLevel)} of
         {true,  true}  -> #priority{facility=Facility, log_level=LogLevel};
@@ -182,16 +171,38 @@ priority(Facility, LogLevel) ->
     end.
 
 %% ----
+-spec set_facility(Facility, Priority) -> Result when
+      Priority :: syslog:priority(),
+      Facility :: syslog:facility(),
+      Result   :: syslog:priority() | {error, invalid_facility}.
+
 -spec get_facility(Priority) -> Facility when
       Priority :: syslog:priority(),
       Facility :: syslog:facility().
 
+set_facility(Facility, Priority) ->
+    case is_facility_valid(Facility) of
+        true  -> Priority#priority{facility=Facility};
+        false -> {error, invalid_facility}
+    end.
+
 get_facility(#priority{facility=Facility}) -> Facility.
 
 %% ----
+-spec set_loglevel(LogLevel, Priority) -> Result when
+      Priority :: syslog:priority(),
+      LogLevel :: syslog:loglevel(),
+      Result   :: syslog:priority() | {error, invalid_loglevel}.
+
 -spec get_loglevel(Priority) -> LogLevel when
       Priority :: syslog:priority(),
       LogLevel :: syslog:loglevel().
+
+set_loglevel(LogLevel, Priority) ->
+    case is_loglevel_valid(LogLevel) of
+        true  -> Priority#priority{log_level=LogLevel};
+        false -> {error, invalid_loglevel}
+    end.
 
 get_loglevel(#priority{log_level=LogLevel}) -> LogLevel.
 
@@ -235,33 +246,34 @@ is_loglevel_valid(debug)     -> true;
 is_loglevel_valid(_)         -> false.
 
 %%====================================================================
--spec log(Priority, Format, Arg) -> Result when
-      Priority :: syslog:priority(),
-      Format   :: string(),
-      Arg      :: list(),
-      Result   :: ok | {error, inet:posix()}.
--spec log(Name, Priority, Format, Arg) -> Result when
-      Name     :: atom(),
-      Priority :: syslog:priority(),
-      Format   :: string(),
-      Arg      :: list(),
-      Result   :: ok | {error, inet:posix()}.
--spec log(Name, LogLevel, Facility, Format, Arg) -> Result when
-      Name     :: atom(),
-      LogLevel :: syslog:log_level(),
-      Facility :: syslog:facility(),
-      Format   :: string(),
-      Arg      :: list(),
-      Result   :: ok | {error, inet:posix()}.
+-spec log(Format, Arg) -> Result when
+      Format          :: string(),
+      Arg             :: list(),
+      Result          :: ok | {error, inet:posix()}.
+-spec log(PriorityOrLevel, Format, Arg) -> Result when
+      PriorityOrLevel :: syslog:priority() | syslog:loglevel(),
+      Format          :: string(),
+      Arg             :: list(),
+      Result          :: ok | {error, inet:posix()}.
+-spec log(Name, PriorityOrLevel, Format, Arg) -> Result when
+      Name            :: atom(),
+      PriorityOrLevel :: syslog:priority() | syslog:loglevel(),
+      Format          :: string(),
+      Arg             :: list(),
+      Result          :: ok | {error, inet:posix()}.
+
+log(Format, Args) ->
+    log(default, #priority{}, Format, Args).
 
 log(#priority{}=Priority, Format, Args) ->
-    log(default, Priority, Format, Args).
+    log(default, Priority, Format, Args);
+log(LogLevel, Format, Args) ->
+    log(default, #priority{log_level=LogLevel}, Format, Args).
 
 log(Name, #priority{}=Priority, Format, Args) ->
-    send_syslog_message(Name, Priority, Format, Args).
-
-log(Name, LogLevel, Facility, Format, Args) ->
-    log(Name, #priority{log_level=LogLevel, facility=Facility}, Format, Args).
+    send_syslog_message(Name, Priority, Format, Args);
+log(Name, LogLevel, Format, Args) ->
+    log(Name, #priority{log_level=LogLevel}, Format, Args).
 
 %% ----
 -spec emergency_msg(Format) -> Result when
@@ -559,75 +571,67 @@ local7()    -> 23. %% reserved for local use
 %% gen_server callbacks.
 %%====================================================================
 init([]) ->
-    ets:new(syslog, [named_table, protected, {keypos, 2}]),
+    ets:new(syslog_loggers, [named_table, protected, {keypos, 2}]),
 
     %% Add default syslog ident to catch messages without ident
     case gen_udp:open(0) of
         {ok, Socket} ->
-            Default_Ident    = sysloggerl_app:get_param(default_ident),
-            Default_Facility = sysloggerl_app:get_param(default_facility),
-            Default_Level    = sysloggerl_app:get_param(default_loglevel),
-            Syslog = #syslog{name       = default,
-                             ident      = Default_Ident,
+            DefaultIdent    = sysloggerl_app:get_param(default_ident),
+            DefaultFacility = sysloggerl_app:get_param(default_facility),
+            DefaultLevel    = sysloggerl_app:get_param(default_loglevel),
+            DefaultPriority = #priority{facility=DefaultFacility,
+                                        log_level=DefaultLevel},
+            DefaultOptions  = [
+                               log_pid,
+                               {host, get_host([])},
+                               {port, get_port([])}
+                              ],
+
+            Logger = #logger{name       = default,
+                             ident      = DefaultIdent,
                              udp_socket = Socket,
-                             facility   = Default_Facility,
-                             log_level  = Default_Level,
-                             options    = [
-                                           log_pid,
-                                           {host, get_host([])},
-                                           {port, get_port([])}
-                                          ]},
-            ets:insert(syslog, Syslog),
+                             priority   = DefaultPriority,
+                             options    = DefaultOptions},
+            ets:insert(syslog_loggers, Logger),
             {ok, []};
         {error, Reason} ->
             {stop, Reason}
     end.
 
 %% ----
-handle_call({add, Name, Ident, Facility, LogLevel, Options}, _From, State) ->
-    Reply = case ets:lookup(syslog, Name) of
+handle_call({set, Name, Ident, Priority, Options}, _From, State) ->
+    Reply = case ets:lookup(syslog_loggers, Name) of
                 [] ->
                     case gen_udp:open(0) of
                         {ok, Socket} ->
-                            Syslog = #syslog{name       = Name,
+                            Logger = #logger{name       = Name,
                                              ident      = Ident,
                                              udp_socket = Socket,
-                                             facility   = Facility,
-                                             log_level  = LogLevel,
+                                             priority   = Priority,
                                              options    = Options},
-                            ets:insert(syslog, Syslog),
+                            ets:insert(syslog_loggers, Logger),
                             {ok, Socket};
                         {error, Reason} ->
                             {error, Reason}
                     end;
-                [_] ->
-                    {error, already_exists}
+                [Logger] ->
+                    NewLogger = Logger#logger{ident    = Ident,
+                                              priority = Priority,
+                                              options  = Options},
+                    ets:insert(syslog_loggers, NewLogger),
+                    {ok, Logger#logger.udp_socket}
             end,
     {reply, Reply, State};
 
-handle_call({remove, Name}, _From, State) ->
-    case ets:lookup(syslog, Name) of
-        [Syslog] ->
-            ets:delete(syslog, Name),
-            gen_udp:close(Syslog#syslog.udp_socket);
+handle_call({unset, Name}, _From, State) ->
+    case ets:lookup(syslog_loggers, Name) of
+        [Logger] ->
+            ets:delete(syslog_loggers, Name),
+            gen_udp:close(Logger#logger.udp_socket);
         [] ->
             ok
     end,
-    {reply, ok, State};
-
-handle_call({update, Name, Ident, Facility, LogLevel, Options}, _From, State) ->
-    Reply = case ets:lookup(syslog, Name) of
-                [] ->
-                    {error, not_found};
-                [Syslog] ->
-                    NewSyslog = Syslog#syslog{ident     = Ident,
-                                              facility  = Facility,
-                                              log_level = LogLevel,
-                                              options   = Options},
-                    ets:insert(syslog, NewSyslog),
-                    {ok, Syslog#syslog.udp_socket}
-            end,
-    {reply, Reply, State}.
+    {reply, ok, State}.
 
 %% ----
 handle_cast(stop, State) ->
@@ -641,11 +645,11 @@ handle_info(_Info, State) ->
 
 %% ----
 terminate(_Reason, _State) ->
-    ets:foldl(fun(Syslog, Acc) ->
-                      gen_udp:close(Syslog#syslog.udp_socket),
+    ets:foldl(fun(Logger, Acc) ->
+                      gen_udp:close(Logger#logger.udp_socket),
                       Acc
-              end, [], syslog),
-    ets:delete(syslog),
+              end, [], syslog_loggers),
+    ets:delete(syslog_loggers),
     ok.
 
 %% ----
@@ -714,12 +718,17 @@ digit(9) -> "09";
 digit(N) -> integer_to_list(N).
 
 %% ----
-format_prefix(#syslog{facility=DFacility, ident=Ident, options=Opts},
+format_prefix(#logger{priority=DPriority, ident=Ident, options=Opts},
               #priority{facility=Facility, log_level=LogLevel}) ->
-    Pri = case Facility of
-              undefined -> (?MODULE:DFacility() bsl 3) bor ?MODULE:LogLevel();
-              _         -> (?MODULE:Facility() bsl 3) bor ?MODULE:LogLevel()
-          end,
+    F = case Facility of
+            undefined -> DPriority#priority.facility;
+            _         -> Facility
+        end,
+    L = case LogLevel of
+            undefined -> DPriority#priority.log_level;
+            _         -> LogLevel
+        end,
+    Pri = (?MODULE:F() bsl 3) bor ?MODULE:L(),
     TS  = get_timestamp(),
     HN  = get_hostname(),
     case proplists:get_bool(log_pid, Opts) of
@@ -758,35 +767,41 @@ truncate_line(Line) ->
 
 %%====================================================================
 send_syslog_message(Name, Priority, Format, []) ->
-    send_syslog_message(Name, Priority, Format);
+    send_syslog_formatted_message(Name, Priority, Format);
 send_syslog_message(Name, Priority, Format, Args) ->
     Message = lists:flatten(io_lib:format(Format, Args)),
-    send_syslog_message(Name, Priority, Message).
+    send_syslog_formatted_message(Name, Priority, Message).
 
-send_syslog_message(#syslog{}=Syslog, Priority, Message) ->
-    Prefix        = format_prefix(Syslog, Priority),
-    Lines         = string:tokens(Message, "\n"),
-    PrefixedLines = prepend_line_nb(Prefix, Lines),
-    send_syslog_lines(Syslog, PrefixedLines);
-send_syslog_message(Name, #priority{log_level=LogLevel}=Priority, Message) ->
-    case ets:lookup(syslog, Name) of
+send_syslog_formatted_message(Name, #priority{log_level=LogLevel}=Priority,
+                              Message) ->
+    case ets:lookup(syslog_loggers, Name) of
         [] ->
             ok;
-        [Syslog] ->
-            Min = Syslog#syslog.log_level,
+        [Logger] when LogLevel == undefined ->
+            send_syslog_lines(
+              Logger, split_formatted_message(Logger, Priority, Message)
+             );
+        [#logger{priority=P}=Logger] ->
+            Min = ?MODULE:(P#priority.log_level)(),
             Cur = ?MODULE:LogLevel(),
             if
-                Cur =< Min -> send_syslog_message(Syslog, Priority, Message);
-                true       -> ok
+                Cur =< Min ->
+                    send_syslog_lines(
+                      Logger, split_formatted_message(Logger, Priority, Message)
+                     );
+                true ->
+                    ok
             end
     end.
 
+split_formatted_message(Logger, Priority, Message) ->
+    Prefix = format_prefix(Logger, Priority),
+    prepend_line_nb(Prefix, string:tokens(Message, "\n")).
 
-send_syslog_lines(Syslog, Lines) ->
-    lists:foreach(fun(L) -> send_syslog_packet(Syslog, L) end, Lines).
+send_syslog_lines(Logger, Lines) ->
+    lists:foreach(fun(Ln) -> send_syslog_packet(Logger, Ln) end, Lines).
 
-
-send_syslog_packet(#syslog{udp_socket=Socket, options=Opts}, Packet) ->
+send_syslog_packet(#logger{udp_socket=Socket, options=Opts}, Packet) ->
     Host = get_host(Opts),
     Port = get_port(Opts),
     gen_udp:send(Socket, Host, Port, Packet).

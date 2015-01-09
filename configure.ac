@@ -172,6 +172,7 @@ echo
 AC_CONFIG_FILES([
     src/Makefile
     ebin/Makefile
+    include/Makefile
     Makefile
 ])
 AC_OUTPUT
