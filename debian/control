@@ -11,6 +11,6 @@ Package: erlang-sysloggerl
 Architecture: all
 Depends: ${misc:Depends}, ${erlang:Depends}
 Description: Syslog logger for Erlang
- An pure Erlang/OTP application for logging messages to a syslog daemon, using
+ A pure Erlang/OTP application for logging messages to a syslog daemon, using
  UDP sockets. It provides a customizable error_logger report handler and
  supports several loggers with different logging options.
