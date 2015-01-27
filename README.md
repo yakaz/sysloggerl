@@ -9,6 +9,9 @@ different logging options. For now, it implements only the [RFC
 **sysloggerl** is distributed under the terms of the **2-clause BSD license**;
 see `COPYING`.
 
+
+[![Build Status](https://travis-ci.org/yakaz/sysloggerl.svg?branch=master)](https://travis-ci.org/yakaz/syslogger)
+
 ## Installation
 
 ### Rebar
