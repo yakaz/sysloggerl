@@ -14,6 +14,23 @@ otp_release:
   - R14B03
   - R14B02
 
+before_install:
+  - sudo apt-get update -qq
+  - sudo apt-get install -y autotools-dev
+
+install:
+  - autoreconf -vfi
+
+before_script:
+  - ./configure
+
+script:
+  - make distcheck -j4 V=1
+
+after_script:
+  - rebar get-deps
+  - rebar compile && rebar skip_deps=true eunit
+
 notifications:
   email:
     recipients:
