@@ -1,3 +1,9 @@
+erlang-sysloggerl (1.2.1-1) experimental; urgency=low
+
+  * Relax typespec on a logger's name
+
+ -- Christopher Faulet <christopher@yakaz.com>  Fri, 20 Feb 2015 11:52:50 +0100
+
 erlang-sysloggerl (1.2.0-1) experimental; urgency=low
 
   * First public release
