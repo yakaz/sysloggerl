@@ -117,7 +117,7 @@ stop() ->
 
 %% ----
 -spec set(Name, Ident, Priority, Options) -> Result when
-      Name     :: atom(),
+      Name     :: any(),
       Ident    :: string(),
       Priority :: syslog:priority(),
       Options  :: proplists:proplist(),
@@ -129,7 +129,7 @@ set(Name, Ident, Priority, Options) ->
     gen_server:call(?MODULE, {set, Name, Ident, Priority, Options}).
 
 %% ----
--spec unset(atom()) -> ok.
+-spec unset(any()) -> ok.
 
 unset(Name) ->
     gen_server:call(?MODULE, {unset, Name}).
@@ -142,7 +142,7 @@ loggers() ->
 
 %% ----
 -spec logger(Name) -> Result when
-      Name   :: atom(),
+      Name   :: any(),
       Result :: syslog:logger() | not_found.
 
 logger(Name) ->
@@ -256,7 +256,7 @@ is_loglevel_valid(_)         -> false.
       Arg             :: list(),
       Result          :: ok | {error, inet:posix()}.
 -spec log(Name, PriorityOrLevel, Format, Arg) -> Result when
-      Name            :: atom(),
+      Name            :: any(),
       PriorityOrLevel :: syslog:priority() | syslog:loglevel(),
       Format          :: string(),
       Arg             :: list(),
@@ -284,12 +284,12 @@ log(Name, LogLevel, Format, Args) ->
       Args     :: list(),
       Result   :: ok | {error, inet:posix()}.
 -spec emergency_msg(Name, Format, Args) -> Result when
-      Name     :: atom(),
+      Name     :: any(),
       Format   :: string(),
       Args     :: list(),
       Result   :: ok | {error, inet:posix()}.
 -spec emergency_msg(Name, Facility, Format, Args) -> Result when
-      Name     :: atom(),
+      Name     :: any(),
       Facility :: syslog:facility(),
       Format   :: string(),
       Args     :: list(),
@@ -316,12 +316,12 @@ emergency_msg(Name, Facility, Format, Args) ->
       Args     :: list(),
       Result   :: ok | {error, inet:posix()}.
 -spec alert_msg(Name, Format, Args) -> Result when
-      Name     :: atom(),
+      Name     :: any(),
       Format   :: string(),
       Args     :: list(),
       Result   :: ok | {error, inet:posix()}.
 -spec alert_msg(Name, Facility, Format, Args) -> Result when
-      Name     :: atom(),
+      Name     :: any(),
       Facility :: syslog:facility(),
       Format   :: string(),
       Args     :: list(),
@@ -348,12 +348,12 @@ alert_msg(Name, Facility, Format, Args) ->
       Args     :: list(),
       Result   :: ok | {error, inet:posix()}.
 -spec critical_msg(Name, Format, Args) -> Result when
-      Name     :: atom(),
+      Name     :: any(),
       Format   :: string(),
       Args     :: list(),
       Result   :: ok | {error, inet:posix()}.
 -spec critical_msg(Name, Facility, Format, Args) -> Result when
-      Name     :: atom(),
+      Name     :: any(),
       Facility :: syslog:facility(),
       Format   :: string(),
       Args     :: list(),
@@ -380,12 +380,12 @@ critical_msg(Name, Facility, Format, Args) ->
       Args     :: list(),
       Result   :: ok | {error, inet:posix()}.
 -spec error_msg(Name, Format, Args) -> Result when
-      Name     :: atom(),
+      Name     :: any(),
       Format   :: string(),
       Args     :: list(),
       Result   :: ok | {error, inet:posix()}.
 -spec error_msg(Name, Facility, Format, Args) -> Result when
-      Name     :: atom(),
+      Name     :: any(),
       Facility :: syslog:facility(),
       Format   :: string(),
       Args     :: list(),
@@ -413,12 +413,12 @@ error_msg(Name, Facility, Format, Args) ->
       Args     :: list(),
       Result   :: ok | {error, inet:posix()}.
 -spec warning_msg(Name, Format, Args) -> Result when
-      Name     :: atom(),
+      Name     :: any(),
       Format   :: string(),
       Args     :: list(),
       Result   :: ok | {error, inet:posix()}.
 -spec warning_msg(Name, Facility, Format, Args) -> Result when
-      Name     :: atom(),
+      Name     :: any(),
       Facility :: syslog:facility(),
       Format   :: string(),
       Args     :: list(),
@@ -445,12 +445,12 @@ warning_msg(Name, Facility, Format, Args) ->
       Args     :: list(),
       Result   :: ok | {error, inet:posix()}.
 -spec notice_msg(Name, Format, Args) -> Result when
-      Name     :: atom(),
+      Name     :: any(),
       Format   :: string(),
       Args     :: list(),
       Result   :: ok | {error, inet:posix()}.
 -spec notice_msg(Name, Facility, Format, Args) -> Result when
-      Name     :: atom(),
+      Name     :: any(),
       Facility :: syslog:facility(),
       Format   :: string(),
       Args     :: list(),
@@ -477,12 +477,12 @@ notice_msg(Name, Facility, Format, Args) ->
       Args     :: list(),
       Result   :: ok | {error, inet:posix()}.
 -spec info_msg(Name, Format, Args) -> Result when
-      Name     :: atom(),
+      Name     :: any(),
       Format   :: string(),
       Args     :: list(),
       Result   :: ok | {error, inet:posix()}.
 -spec info_msg(Name, Facility, Format, Args) -> Result when
-      Name     :: atom(),
+      Name     :: any(),
       Facility :: syslog:facility(),
       Format   :: string(),
       Args     :: list(),
@@ -509,12 +509,12 @@ info_msg(Name, Facility, Format, Args) ->
       Args     :: list(),
       Result   :: ok | {error, inet:posix()}.
 -spec debug_msg(Name, Format, Args) -> Result when
-      Name     :: atom(),
+      Name     :: any(),
       Format   :: string(),
       Args     :: list(),
       Result   :: ok | {error, inet:posix()}.
 -spec debug_msg(Name, Facility, Format, Args) -> Result when
-      Name     :: atom(),
+      Name     :: any(),
       Facility :: syslog:facility(),
       Format   :: string(),
       Args     :: list(),

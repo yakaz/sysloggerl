@@ -26,7 +26,7 @@
 -record(priority, {facility  :: syslog:facility(),
                    log_level :: syslog:loglevel()}).
 
--record(logger,   {name       :: atom(),
+-record(logger,   {name       :: any(),
                    ident      :: string(),
                    udp_socket :: inet:socket(),
                    priority   :: syslog:priority(),
