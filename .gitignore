@@ -26,6 +26,7 @@ debian/*.debhelper.log
 debian/*.substvars
 debian/build
 debian/files
-debian/sysloggerl
+debian/erlang-sysloggerl
 debian/*-stamp
+debian/autoreconf.*
 debian/watch
