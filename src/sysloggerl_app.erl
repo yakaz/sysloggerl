@@ -30,7 +30,7 @@
 %% Configuration API.
 -export([
          params_list/0,
-         get_param/1, get_param/2,
+         get_param/1,
          is_param_valid/2,
          set_param/2,
          check_and_set_param/2,
@@ -54,23 +54,22 @@
 %%====================================================================
 %% Configuration API.
 %%====================================================================
--spec params_list() -> [atom() | {atom(), any()}].
+-spec params_list() -> [atom() | any()].
 
 params_list() ->
     [
-     {default_syslog_host, "localhost"},
-     {default_syslog_port, 514},
-     {default_ident,       "sysloggerl"},
-     {default_facility,    user},
-     {default_loglevel,    notice},
-
-     {enable_error_logger,      true},
-     {error_logger_ident,       "error_logger"},
-     {error_logger_facility,    user},
-     {error_logger_loglevel,    info},
-     {error_logger_depth,       -1},
-     {error_logger_line_length, 80},
-     {error_logger_tty,         false}
+     default_syslog_host,
+     default_syslog_port,
+     default_ident,
+     default_facility,
+     default_loglevel,
+     enable_error_logger,
+     error_logger_ident,
+     error_logger_facility,
+     error_logger_loglevel,
+     error_logger_depth,
+     error_logger_line_length,
+     error_logger_tty
     ].
 
 %% ----
@@ -79,17 +78,6 @@ params_list() ->
 get_param(Param) ->
     {ok, Value} = application:get_env(?APPLICATION, Param),
     Value.
-
--spec get_param(atom(), any()) -> any().
-
-get_param(Param, Default) ->
-    case application:get_env(?APPLICATION, Param) of
-        {ok, Value} ->
-            Value;
-        _ ->
-            set_param(Param, Default),
-            Default
-    end.
 
 %% ----
 -spec is_param_valid(atom(), any()) -> boolean().
@@ -143,10 +131,7 @@ check_and_set_param(Param, Value) ->
 -spec show_params() -> ok.
 
 show_params() ->
-    Fun = fun({Param,DefaultValue}) ->
-                  Value = get_param(Param,DefaultValue),
-                  io:format("~s: ~p~n", [Param, Value]);
-             (Param) ->
+    Fun = fun(Param) ->
                   Value = get_param(Param),
                   io:format("~s: ~p~n", [Param, Value])
           end,
@@ -156,10 +141,7 @@ show_params() ->
 -spec check_params() -> boolean().
 
 check_params() ->
-    Fun = fun({Param,DefaultValue}) ->
-                  Value = get_param(Param,DefaultValue),
-                  not is_param_valid(Param, Value);
-             (Param) ->
+    Fun = fun(Param) ->
                   Value = get_param(Param),
                   not is_param_valid(Param, Value)
           end,

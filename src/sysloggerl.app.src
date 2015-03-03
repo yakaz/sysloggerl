@@ -13,5 +13,20 @@
                   kernel,
                   stdlib
                  ]},
-  {mod, {sysloggerl_app, []}}
+  {mod, {sysloggerl_app, []}},
+  {env, [
+         {default_syslog_host, "localhost"},
+         {default_syslog_port, 514},
+         {default_ident,       "sysloggerl"},
+         {default_facility,    user},
+         {default_loglevel,    notice},
+
+         {enable_error_logger,      true},
+         {error_logger_ident,       "error_logger"},
+         {error_logger_facility,    user},
+         {error_logger_loglevel,    info},
+         {error_logger_depth,       -1},
+         {error_logger_line_length, 80},
+         {error_logger_tty,         false}
+        ]}
  ]}.
