@@ -116,15 +116,15 @@ set_param(Param, Value) ->
     application:set_env(?APPLICATION, Param, Value).
 
 %% ----
--spec check_and_set_param(atom(), any()) -> ok.
+-spec check_and_set_param(atom(), any()) -> ok | error.
 
 check_and_set_param(Param, Value) ->
     %% If the value is invalid, this function logs an error through
     %% error_logger:warning_msg/2 but always returns 'ok'. To check a value
     %% programmatically, use the is_param_valid/2 function.
     case is_param_valid(Param, Value) of
-        true  -> set_param(Param, Value);
-        false -> log_param_errors([Param])
+        true  -> set_param(Param, Value), ok;
+        false -> log_param_errors([Param]), error
     end.
 
 %% ----
