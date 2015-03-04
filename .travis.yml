@@ -29,11 +29,4 @@ script:
 
 after_script:
   - rebar get-deps
-  - rebar compile && rebar skip_deps=true eunit
-
-notifications:
-  email:
-    recipients:
-      - christopher.faulet@capflam.org
-  on_success: change
-  on_failure: always
+  - rebar compile && rebar skip_deps=true ct

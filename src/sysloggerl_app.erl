@@ -261,7 +261,7 @@ start(_, _) ->
         true ->
             case sysloggerl_sup:start_link() of
                 {ok, Pid} ->
-                    spawn(fun post_start/0),
+                    post_start(),
                     {ok, Pid};
                 Else ->
                     Else

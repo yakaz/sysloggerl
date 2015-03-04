@@ -18,6 +18,13 @@ Makefile.in
 */Makefile.in
 ebin/sysloggerl.app
 ebin/sysloggerl.appup
+logs
+testsuite/logs
+testsuite/*.log
+testsuite/analyze_coverdata.escript
+testsuite/cover_to_html.sh
+testsuite/run_common_test
+testsuite/sysloggerl.coverspec
 
 # Files produced by Debian package.
 build-stamp

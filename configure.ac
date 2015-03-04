@@ -112,6 +112,28 @@ dialyzer(1) not found. Fill the DIALYZER variable with dialyzer(1) path if
 you want to use it.])
 fi
 
+dnl ct_run(1).
+AC_ARG_VAR([CT_RUN], [Erlang/OTP Program used for starting Common Test [autodetected]])
+
+if test "x${CT_RUN}" = "x"; then
+   if test "x${with_erlang}" = "x"; then
+      AC_PATH_PROG([CT_RUN], [ct_run],,)
+   else
+        erl_path="${with_erlang}/bin"
+        AC_PATH_PROG([CT_RUN], [ct_run],,
+            [$erl_path$PATH_SEPARATOR$PATH])
+   fi
+else
+    AC_MSG_CHECKING([for ct_run])
+    AC_MSG_RESULT([$CT_RUN])
+fi
+
+if test "x${CT_RUN}" = "x"; then
+    AC_MSG_WARN([
+ct_run(1) not found. Fill the CT_RUN variable with ct_run(1) path if
+you want to use it.])
+fi
+
 dnl Declare ERL_LIBS as precious.
 AC_ARG_VAR([ERL_LIBS], [Erlang/OTP applications search path [none]])
 
@@ -156,9 +178,18 @@ dnl ------------------------------------------------------------------
 AC_ERLANG_CHECK_LIB([kernel],,   [AC_MSG_ERROR(["kernel" Erlang application not found.])])
 AC_ERLANG_CHECK_LIB([stdlib],,   [AC_MSG_ERROR(["stdlib" Erlang application not found.])])
 
+AC_ERLANG_CHECK_LIB([common_test],, [AC_MSG_WARN(["common_test" Erlang application not found.])])
+AC_ERLANG_CHECK_LIB([eunit],,       [AC_MSG_WARN(["eunit" Erlang application not found.])])
+AC_ERLANG_CHECK_LIB([tools],,       [AC_MSG_WARN(["tools" Erlang application not found.])])
+
 dnl ------------------------------------------------------------------
 dnl Finale substitutions.
 dnl ------------------------------------------------------------------
+AM_CONDITIONAL(HAVE_TS_TOOLS, [(test "x${CT_RUN}"                    != "x")         &&
+                               (test "${ERLANG_LIB_DIR_common_test}" != "not found") &&
+                               (test "${ERLANG_LIB_DIR_eunit}"       != "not found") &&
+                               (test "${ERLANG_LIB_DIR_tools}"       != "not found")])
+
 exp_ERLANG_INSTALL_LIB_DIR_sysloggerl=`expand_var ERLANG_INSTALL_LIB_DIR_sysloggerl`
 AC_SUBST(exp_ERLANG_INSTALL_LIB_DIR_sysloggerl)
 
@@ -166,29 +197,45 @@ AC_SUBST(exp_ERLANG_INSTALL_LIB_DIR_sysloggerl)
 dnl ------------------------------------------------------------------
 dnl Autoconf output.
 dnl ------------------------------------------------------------------
-AC_SUBST([CONFIG_STATUS_DEPENDENCIES], ['$(top_srcdir)/vsn.mk'])
+AC_SUBST([CONFIG_STATUS_DEPENDENCIES],
+    ['$(top_srcdir)/vsn.mk                              \
+      $(top_srcdir)/erlang_deps.mk                      \
+      $(top_srcdir)/include.mk                          \
+      $(top_srcdir)/testsuite/run_common_test.in        \
+      $(top_srcdir)/testsuite/sysloggerl.coverspec.in   \
+      $(top_srcdir)/testsuite/cover_to_html.sh.in       \
+      $(top_srcdir)/testsuite/analyze_coverdata.escript.in'])
 
 echo
 AC_CONFIG_FILES([
+    Makefile
     src/Makefile
     ebin/Makefile
     include/Makefile
-    Makefile
+    testsuite/Makefile
+    testsuite/${PACKAGE_NAME}.coverspec
 ])
+
+AC_CONFIG_FILES([testsuite/run_common_test], [chmod +x testsuite/run_common_test])
+AC_CONFIG_FILES([testsuite/cover_to_html.sh], [chmod +x testsuite/cover_to_html.sh])
+AC_CONFIG_FILES([testsuite/analyze_coverdata.escript], [chmod +x testsuite/analyze_coverdata.escript])
+
 AC_OUTPUT
 
 dnl --------------------------------------------------
 dnl Configuration report
 dnl --------------------------------------------------
 echo
-COLORED_ECHO([ %B== ${PACKAGE_NAME} ${PACKAGE_VERSION} ==%b])
+COLORED_ECHO([ %B== ${PACKAGE_NAME} ${SYSLOGGERL_VSN} ==%b])
 echo
 COLORED_ECHO([Configuration:])
 COLORED_ECHO([ %BApplication dir.%b:     ${exp_ERLANG_INSTALL_LIB_DIR_sysloggerl}])
 echo
-COLORED_ECHO([ %BErlang root dir%b:    ${ERLANG_ROOT_DIR}])
-COLORED_ECHO([ %BErlang lib dir%b:     ${ERLANG_LIB_DIR}])
-COLORED_ECHO([ %BErlang emulator%b:    ${ERL}])
-COLORED_ECHO([ %BErlang compiler%b:    ${ERLC}])
-COLORED_ECHO([ %BErlang interpreter%b: ${ESCRIPT}])
+COLORED_ECHO([ %BErlang root dir%b:      ${ERLANG_ROOT_DIR}])
+COLORED_ECHO([ %BErlang lib dir%b:       ${ERLANG_LIB_DIR}])
+COLORED_ECHO([ %BErlang emulator%b:      ${ERL}])
+COLORED_ECHO([ %BErlang compiler%b:      ${ERLC}])
+COLORED_ECHO([ %BErlang interpreter%b:   ${ESCRIPT}])
+COLORED_ECHO([ %BErlang dialyzer tool%b: ${DIALYZER}])
+COLORED_ECHO([ %BErlang ct_run tool%b:   ${CT_RUN}])
 echo

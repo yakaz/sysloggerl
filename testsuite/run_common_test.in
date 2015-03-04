@@ -1,0 +1,98 @@
+#! /bin/sh
+# -
+# Copyright (c) 2012-2015 Yakaz
+# All rights reserved.
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions
+# are met:
+# 1. Redistributions of source code must retain the above copyright
+# notice, this list of conditions and the following disclaimer.
+# 2. Redistributions in binary form must reproduce the above copyright
+# notice, this list of conditions and the following disclaimer in the
+# documentation and/or other materials provided with the distribution.
+#
+# THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS ``AS IS'' AND
+# ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+# ARE DISCLAIMED. IN NO EVENT SHALL THE AUTHOR OR CONTRIBUTORS BE LIABLE
+# FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+# DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+# OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+# HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+# LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+# OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+# SUCH DAMAGE.
+
+CT_RUN=@CT_RUN@
+COVER_TO_HTML=@abs_builddir@/cover_to_html.sh
+LABEL=@PACKAGE_NAME@
+LOG_DIR=@abs_builddir@/logs
+LOG_FILE=${LOG_DIR}/${LABEL}.log
+CUR_DIR=@abs_builddir@
+EBIN_DIR=@abs_top_builddir@/ebin
+INC_DIR=@abs_top_builddir@/include
+COVERSPEC=@abs_builddir@/@PACKAGE_NAME@.coverspec
+
+ALL_SUITES=$1
+SUITES=$2
+CASES=$3
+
+if (test x"$SUITES" = xall) || (test x"$SUITES" = x); then
+    SUITES=$ALL_SUITES
+    CASES=
+fi
+
+nb_suites=$(echo $SUITES | wc -w)
+if (test x"$CASES" = xall) || (test $nb_suites -gt 1); then
+    CASES=
+fi
+
+suites_and_cases=
+if (test x"$SUITES" != x); then
+    suites_and_cases="-suite $SUITES"
+fi
+if (test x"$CASES" != x); then
+    suites_and_cases="$suites_and_cases -case $CASES"
+fi
+
+
+COLORS=$(tput colors 2> /dev/null)
+if (test $? = 0) && (test $COLORS -gt 2); then
+    red='[0;31m'
+    green='[0;32m'
+    bold='[0;1m'
+    std='[m'
+else
+    red= green= bold= std=
+fi
+
+export RED_COLOR=$red
+export GREEN_COLOR=$green
+export STD_COLOR=$std
+export BOLD_COLOR=$bold
+
+$CT_RUN -label $LABEL -logdir $LOG_DIR -dir $CUR_DIR -cover $COVERSPEC  \
+        $suites_and_cases -no_auto_compile                              \
+        -pa $EBIN_DIR -include $INC_DIR > $LOG_FILE
+estatus=$?
+
+$COVER_TO_HTML
+
+case $estatus in
+    0) col=$green res=PASS;;
+    *) col=$red   res=FAIL;;
+esac
+
+TEST_PATH=$(grep "ct_run.ct@" ${LOG_FILE} | sed -e 's/^.*"\(.*\)".*$/\1/')
+
+echo
+echo "${bold}RESULT: ${col}${res}${std}"
+echo "============================================================================${std}"
+echo " see ${LOG_FILE} for details${std}"
+echo
+echo " common_test result: ${TEST_PATH}/index.html${std}"
+echo " coverage result:    ${LOG_DIR}/cover.html${std}"
+echo "============================================================================${std}"
+
+exit $estatus
