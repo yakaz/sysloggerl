@@ -10,7 +10,7 @@ different logging options. For now, it implements only the [RFC
 see `COPYING`.
 
 
-[![Build Status](https://travis-ci.org/yakaz/sysloggerl.svg?branch=master)](https://travis-ci.org/yakaz/syslogger)
+[![Build Status](https://travis-ci.org/yakaz/sysloggerl.svg?branch=master)](https://travis-ci.org/yakaz/sysloggerl)
 
 ## Installation
 

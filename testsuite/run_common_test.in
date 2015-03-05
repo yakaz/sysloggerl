@@ -94,5 +94,6 @@ echo
 echo " common_test result: ${TEST_PATH}/index.html${std}"
 echo " coverage result:    ${LOG_DIR}/cover.html${std}"
 echo "============================================================================${std}"
+echo
 
 exit $estatus
