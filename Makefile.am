@@ -5,7 +5,8 @@ SUBDIRS = src ebin include testsuite
 
 EXTRA_DIST = README.md AUTHORS COPYING vsn.mk include.mk erlang_deps.mk	\
 	     debian/changelog debian/compat debian/control 		\
-	     debian/copyright debian/rules debian/source debian/watch
+	     debian/copyright debian/rules debian/source debian/watch	\
+	     doc/syslog.md doc/syslog_wrapper.md
 
 dialyzer: all
 	$(AM_V_at)if [ -z $(DIALYZER) ]; then					\
