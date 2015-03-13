@@ -2,9 +2,9 @@
 
 **sysloggerl** is a pure [Erlang/OTP](http://www.erlang.org/) application for
 logging messages to syslog daemons, using UDP sockets. It provides a
-customizable error_logger report handler and can handle several loggers with
-different logging options. For now, it implements only the [RFC
-3164](http://tools.ietf.org/html/rfc3164) protocol.
+customizable error_logger report handler and can handles several loggers with
+different logging options. For now, it implements only the
+[RFC 3164](http://tools.ietf.org/html/rfc3164) protocol.
 
 **sysloggerl** is distributed under the terms of the **2-clause BSD license**;
 see `COPYING`.
@@ -20,8 +20,8 @@ Table of contents
  - [Getting started](#getting-started)
   - [Play with loggers](#play-with-loggers)
   - [Log messages](#log-messages)
-  - [Advanced feature: The syslog wrappers](#advanced-feature-the-syslog-wrappers)
  - [Configuration](#configuration)
+ - [Advanced feature: The syslog wrappers](#advanced-feature-the-syslog-wrappers)
  - [API](#api)
 
 
@@ -150,10 +150,6 @@ logger name:
 
 **Note**: any Erlang term can be used as logger name.
 
-### Advanced feature: The syslog wrappers
-
-TODO
-
 
 ## Configuration
 
@@ -221,6 +217,11 @@ dedicated logger. There are additional parameters to configure this logger:
 
   Enables/disables printout of standard events to the tty. See
   `error_logger:tty/1`. Default value: `false`.
+
+
+## Advanced feature: The syslog wrappers
+
+TODO
 
 
 ## API
