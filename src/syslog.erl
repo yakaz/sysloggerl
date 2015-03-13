@@ -25,6 +25,7 @@
 
 -module(syslog).
 
+-behaviour(gen_server).
 
 -include("sysloggerl.hrl").
 
