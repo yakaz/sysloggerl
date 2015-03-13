@@ -31,10 +31,12 @@
 
 -ifdef(SHOW_LOG).
 
+-define(LOG(Fmt),       io:format(standard_error, Fmt, [])).
 -define(LOG(Fmt, Args), io:format(standard_error, Fmt, Args)).
 
 -else.
 
+-define(LOG(Fmt),       io_lib:format(Fmt, [])).
 -define(LOG(Fmt, Args), io_lib:format(Fmt, Args)).
 
 -endif.
