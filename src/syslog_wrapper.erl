@@ -25,51 +25,326 @@
 
 -module(syslog_wrapper).
 
+-ifdef(LOGGER_NAME).
+
 %% API
 -export([
-         create/3,
-         parse_transform/2,
-
+         get_name/0,
          get_loglevel/0,
-         log/3,
+         get_facility/0,
+         get_logger/0,
 
-         emergency_msg/2, emergency_msg/3,
-         alert_msg/2,     alert_msg/3,
-         critical_msg/2,  critical_msg/3,
-         error_msg/2,     error_msg/3,
-         warning_msg/2,   warning_msg/3,
-         notice_msg/2,    notice_msg/3,
-         info_msg/2,      info_msg/3,
-         debug_msg/2,     debug_msg/3
+         log/1, log/2, log/3,
+
+         emergency_msg/1, emergency_msg/2,
+         alert_msg/1,     alert_msg/2,
+         critical_msg/1,  critical_msg/2,
+         error_msg/1,     error_msg/2,
+         warning_msg/1,   warning_msg/2,
+         notice_msg/1,    notice_msg/2,
+         info_msg/1,      info_msg/2,
+         debug_msg/1,     debug_msg/2
         ]).
 
 %%====================================================================
 %% API
 %%====================================================================
--spec create(atom(), string(), syslog:loglevel()) -> ok | error.
+-spec get_name() -> Name when
+      Name :: {syslog_wrapper, atom()}.
 
-create(ModName, SyslogName, LogLevel) when is_atom(ModName) ->
-    Options = [
-               binary,
-               {parse_transform, ?MODULE},
-               {d, 'MODULE_NAME', ModName},
-               {d, 'SYSLOG_NAME', SyslogName},
-               {d, 'SYSLOG_LOGLEVEL', syslog:LogLevel()}
-              ],
+get_name() ->
+    ?LOGGER_NAME.
+
+%% ----
+-spec get_loglevel() -> Level when
+      Level :: syslog:loglevel().
+
+get_loglevel() ->
+    syslog:get_loglevel(?LOGGER_PRIORITY).
+
+%% ----
+-spec get_facility() -> Facility when
+      Facility :: syslog:facility().
+
+get_facility() ->
+    syslog:get_facility(?LOGGER_PRIORITY).
+
+%% ---
+-spec get_logger() -> Logger when
+      Logger :: syslog:logger().
+
+get_logger() ->
+    syslog:logger(?LOGGER_NAME).
+
+%% ----
+-spec log(Message) -> Result when
+      Message  :: string(),
+      Result   :: ok | {error, inet:posix()}.
+-spec log(Format, Args) -> Result when
+      Format   :: string(),
+      Args     :: list(),
+      Result   :: ok | {error, inet:posix()}.
+-spec log(LogLevel, Format, Args) -> Result when
+      LogLevel :: syslog:loglevel(),
+      Format   :: string(),
+      Args     :: list(),
+      Result   :: ok | {error, inet:posix()}.
+
+log(Message) ->
+    syslog:log(?LOGGER_NAME, ?LOGGER_PRIORITY, Message, []).
+
+log(Format, Args) ->
+    syslog:log(?LOGGER_NAME, ?LOGGER_PRIORITY, Format, Args).
+
+log(LogLevel, Format, Args) ->
+    case syslog:LogLevel() =< ?LOGGER_LOGLEVEL_INT of
+        true  -> syslog:log(?LOGGER_NAME, LogLevel, Format, Args);
+        false -> ok
+    end.
+
+
+
+%% ----
+-ifdef(LOG_EMERGENCY_MSG).
+
+-spec emergency_msg(Message) -> Result when
+      Message  :: string(),
+      Result   :: ok | {error, inet:posix()}.
+-spec emergency_msg(Format, Args) -> Result when
+      Format   :: string(),
+      Args     :: list(),
+      Result   :: ok | {error, inet:posix()}.
+
+emergency_msg(Message) ->
+    syslog:emergency_msg(?LOGGER_NAME, Message, []).
+
+emergency_msg(Format, Args) ->
+    syslog:emergency_msg(?LOGGER_NAME, Format, Args).
+
+-else.
+
+emergency_msg(_) -> noop.
+emergency_msg(_,_) -> noop.
+
+-endif.
+
+%% ----
+-ifdef(LOG_ALERT_MSG).
+
+-spec alert_msg(Message) -> Result when
+      Message  :: string(),
+      Result   :: ok | {error, inet:posix()}.
+-spec alert_msg(Format, Args) -> Result when
+      Format   :: string(),
+      Args     :: list(),
+      Result   :: ok | {error, inet:posix()}.
+
+alert_msg(Message) ->
+    syslog:alert_msg(?LOGGER_NAME, Message, []).
+
+alert_msg(Format, Args) ->
+    syslog:alert_msg(?LOGGER_NAME, Format, Args).
+
+-else.
+
+alert_msg(_) -> noop.
+alert_msg(_,_) -> noop.
+
+-endif.
+
+%% ----
+-ifdef(LOG_CRITIAL_MSG).
+
+-spec critical_msg(Message) -> Result when
+      Message  :: string(),
+      Result   :: ok | {error, inet:posix()}.
+-spec critical_msg(Format, Args) -> Result when
+      Format   :: string(),
+      Args     :: list(),
+      Result   :: ok | {error, inet:posix()}.
+
+critical_msg(Message) ->
+    syslog:critical_msg(?LOGGER_NAME, Message, []).
+
+critical_msg(Format, Args) ->
+    syslog:critical_msg(?LOGGER_NAME, Format, Args).
+
+-else.
+
+critical_msg(_) -> noop.
+critical_msg(_,_) -> noop.
+
+-endif.
+
+%% ----
+-ifdef(LOG_ERROR_MSG).
+
+-spec error_msg(Message) -> Result when
+      Message  :: string(),
+      Result   :: ok | {error, inet:posix()}.
+-spec error_msg(Format, Args) -> Result when
+      Format   :: string(),
+      Args     :: list(),
+      Result   :: ok | {error, inet:posix()}.
+
+error_msg(Message) ->
+    syslog:error_msg(?LOGGER_NAME, Message, []).
+
+error_msg(Format, Args) ->
+    syslog:error_msg(?LOGGER_NAME, Format, Args).
+
+-else.
+
+error_msg(_) -> noop.
+error_msg(_,_) -> noop.
+
+-endif.
+
+%% ----
+-ifdef(LOG_WARNING_MSG).
+
+-spec warning_msg(Message) -> Result when
+      Message  :: string(),
+      Result   :: ok | {error, inet:posix()}.
+-spec warning_msg(Format, Args) -> Result when
+      Format   :: string(),
+      Args     :: list(),
+      Result   :: ok | {error, inet:posix()}.
+
+warning_msg(Message) ->
+    syslog:warning_msg(?LOGGER_NAME, Message, []).
+
+warning_msg(Format, Args) ->
+    syslog:warning_msg(?LOGGER_NAME, Format, Args).
+
+-else.
+
+warning_msg(_) -> noop.
+warning_msg(_,_) -> noop.
+
+-endif.
+
+%% ----
+-ifdef(LOG_NOTICE_MSG).
+
+-spec notice_msg(Message) -> Result when
+      Message  :: string(),
+      Result   :: ok | {error, inet:posix()}.
+-spec notice_msg(Format, Args) -> Result when
+      Format   :: string(),
+      Args     :: list(),
+      Result   :: ok | {error, inet:posix()}.
+
+notice_msg(Message) ->
+    syslog:notice_msg(?LOGGER_NAME, Message, []).
+
+notice_msg(Format, Args) ->
+    syslog:notice_msg(?LOGGER_NAME, Format, Args).
+
+-else.
+
+notice_msg(_) -> noop.
+notice_msg(_,_) -> noop.
+
+-endif.
+
+%% ----
+-ifdef(LOG_INFO_MSG).
+
+-spec info_msg(Message) -> Result when
+      Message  :: string(),
+      Result   :: ok | {error, inet:posix()}.
+-spec info_msg(Format, Args) -> Result when
+      Format   :: string(),
+      Args     :: list(),
+      Result   :: ok | {error, inet:posix()}.
+
+info_msg(Message)  ->
+    syslog:info_msg(?LOGGER_NAME, Message, []).
+
+info_msg(Format, Args)  ->
+    syslog:info_msg(?LOGGER_NAME, Format, Args).
+
+-else.
+
+info_msg(_) -> noop.
+info_msg(_,_) -> noop.
+
+-endif.
+
+%% ----
+-ifdef(LOG_DEBUG_MSG).
+
+-spec debug_msg(Message) -> Result when
+      Message  :: string(),
+      Result   :: ok | {error, inet:posix()}.
+-spec debug_msg(Format, Args) -> Result when
+      Format   :: string(),
+      Args     :: list(),
+      Result   :: ok | {error, inet:posix()}.
+
+debug_msg(Message) ->
+    syslog:debug_msg(?LOGGER_NAME, Message, []).
+
+debug_msg(Format, Args) ->
+    syslog:debug_msg(?LOGGER_NAME, Format, Args).
+
+-else.
+
+debug_msg(_) -> noop.
+debug_msg(_,_) -> noop.
+
+-endif.
+
+-else.
+
+-include("sysloggerl.hrl").
+
+%% API
+-export([
+         create/4,
+         destroy/1,
+         parse_transform/2
+        ]).
+
+%%====================================================================
+%% API
+%%====================================================================
+-spec create(ModName, Ident, Priority, Options) -> Result when
+      ModName  :: any(),
+      Ident    :: string(),
+      Priority :: syslog:priority(),
+      Options  :: proplists:proplist(),
+      Result   :: ok | error.
+
+create(ModName, Ident, Priority, Options) ->
+    LoggerName = {?MODULE, ModName},
+    CompileOpts= get_module_options(ModName, LoggerName, Priority),
+
     case get_srcfile() of
-        {error, notfound} -> error;
+        {error, notfound} ->
+            error;
         SrcFile ->
-            case compile:file(SrcFile, Options) of
-                {ok, ModName, Binary} ->
-                    case code:load_binary(ModName, [], Binary) of
-                        {module, ModName} -> ok;
-                        {error, _What}    -> error
+            case compile(SrcFile, CompileOpts) of
+                ok ->
+                    case syslog:set(LoggerName, Ident, Priority, Options) of
+                        {ok, _} -> ok;
+                        _       -> destroy(ModName)
                     end;
-                {error, _Errors, _Warnings} -> error;
-                error -> error
+                error ->
+                    error
             end
     end.
 
+%% ----
+-spec destroy(ModName) -> ok when
+      ModName :: atom().
+
+destroy(ModName) ->
+    LoggerName = {?MODULE, ModName},
+    syslog:unset(LoggerName),
+    code:delete(ModName),
+    ok.
 
 %% ----
 -spec parse_transform(Forms, Options) -> Forms when
@@ -89,237 +364,6 @@ parse_transform(Forms, Options) ->
         false ->
             Forms
     end.
-
-
-%%====================================================================
--spec get_loglevel() -> Level when
-      Level :: syslog:loglevel().
-
--spec log(Priority, Format, Args) -> Result when
-      Priority :: syslog:priority(),
-      Format   :: string(),
-      Args     :: list(),
-      Result   :: ok | {error, inet:posix()}.
-
--spec emergency_msg(Format, Args) -> Result when
-      Format   :: string(),
-      Args     :: list(),
-      Result   :: ok | {error, inet:posix()}.
--spec emergency_msg(Facility, Format, Args) -> Result when
-      Facility :: syslog:facility(),
-      Format   :: string(),
-      Args     :: list(),
-      Result   :: ok | {error, inet:posix()}.
-
--spec alert_msg(Format, Args) -> Result when
-      Format   :: string(),
-      Args     :: list(),
-      Result   :: ok | {error, inet:posix()}.
--spec alert_msg(Facility, Format, Args) -> Result when
-      Facility :: syslog:facility(),
-      Format   :: string(),
-      Args     :: list(),
-      Result   :: ok | {error, inet:posix()}.
-
--spec critical_msg(Format, Args) -> Result when
-      Format   :: string(),
-      Args     :: list(),
-      Result   :: ok | {error, inet:posix()}.
--spec critical_msg(Facility, Format, Args) -> Result when
-      Facility :: syslog:facility(),
-      Format   :: string(),
-      Args     :: list(),
-      Result   :: ok | {error, inet:posix()}.
-
--spec error_msg(Format, Args) -> Result when
-      Format   :: string(),
-      Args     :: list(),
-      Result   :: ok | {error, inet:posix()}.
--spec error_msg(Facility, Format, Args) -> Result when
-      Facility :: syslog:facility(),
-      Format   :: string(),
-      Args     :: list(),
-      Result   :: ok | {error, inet:posix()}.
-
--spec warning_msg(Format, Args) -> Result when
-      Format   :: string(),
-      Args     :: list(),
-      Result   :: ok | {error, inet:posix()}.
--spec warning_msg(Facility, Format, Args) -> Result when
-      Facility :: syslog:facility(),
-      Format   :: string(),
-      Args     :: list(),
-      Result   :: ok | {error, inet:posix()}.
-
--spec notice_msg(Format, Args) -> Result when
-      Format   :: string(),
-      Args     :: list(),
-      Result   :: ok | {error, inet:posix()}.
--spec notice_msg(Facility, Format, Args) -> Result when
-      Facility :: syslog:facility(),
-      Format   :: string(),
-      Args     :: list(),
-      Result   :: ok | {error, inet:posix()}.
-
--spec info_msg(Format, Args) -> Result when
-      Format   :: string(),
-      Args     :: list(),
-      Result   :: ok | {error, inet:posix()}.
--spec info_msg(Facility, Format, Args) -> Result when
-      Facility :: syslog:facility(),
-      Format   :: string(),
-      Args     :: list(),
-      Result   :: ok | {error, inet:posix()}.
-
--spec debug_msg(Format, Args) -> Result when
-      Format   :: string(),
-      Args     :: list(),
-      Result   :: ok | {error, inet:posix()}.
--spec debug_msg(Facility, Format, Args) -> Result when
-      Facility :: syslog:facility(),
-      Format   :: string(),
-      Args     :: list(),
-      Result   :: ok | {error, inet:posix()}.
-
-%%====================================================================
--ifdef(SYSLOG_LOGLEVEL).
-
-
--include_lib("sysloggerl/include/sysloggerl.hrl").
-
--ifndef(SYSLOG_NAME).
--define(SYSLOG_NAME, default).
--endif.
-
-get_loglevel() ->
-    ?SYSLOG_LOGLEVEL.
-
-%% ----
-log(Priority, Format, Args) ->
-    LogLevel = syslog:get_loglevel(Priority),
-    case syslog:LogLevel() =< ?SYSLOG_LOGLEVEL of
-        true  -> syslog:log(?SYSLOG_NAME, Priority, Format, Args);
-        false -> ok
-    end.
-
-emergency_msg(Format, Args)
-  when ?SYSLOG_LOGLEVEL >= ?SYSLOG_LOGLEVEL_EMERGENCY ->
-    syslog:emergency_msg(?SYSLOG_NAME, Format, Args);
-emergency_msg(_,_) -> ok.
-
-emergency_msg(Facility, Format, Args)
-  when ?SYSLOG_LOGLEVEL >= ?SYSLOG_LOGLEVEL_EMERGENCY ->
-    syslog:emergency_msg(?SYSLOG_NAME, Facility, Format, Args);
-emergency_msg(_,_,_) -> ok.
-
-%% --
-alert_msg(Format, Args)
-  when ?SYSLOG_LOGLEVEL >= ?SYSLOG_LOGLEVEL_ALERT ->
-    syslog:alert_msg(?SYSLOG_NAME, Format, Args);
-alert_msg(_,_) -> ok.
-
-alert_msg(Facility, Format, Args)
-  when ?SYSLOG_LOGLEVEL >= ?SYSLOG_LOGLEVEL_ALERT ->
-    syslog:alert_msg(?SYSLOG_NAME, Facility, Format, Args);
-alert_msg(_,_,_) -> ok.
-
-%% --
-critical_msg(Format, Args)
-  when ?SYSLOG_LOGLEVEL >= ?SYSLOG_LOGLEVEL_CRITICAL ->
-    syslog:critical_msg(?SYSLOG_NAME, Format, Args);
-critical_msg(_,_) -> ok.
-
-critical_msg(Facility, Format, Args)
-  when ?SYSLOG_LOGLEVEL >= ?SYSLOG_LOGLEVEL_CRITICAL ->
-    syslog:critical_msg(?SYSLOG_NAME, Facility, Format, Args);
-critical_msg(_,_,_) -> ok.
-
-%% --
-error_msg(Format, Args)
-  when ?SYSLOG_LOGLEVEL >= ?SYSLOG_LOGLEVEL_ERROR ->
-    syslog:error_msg(?SYSLOG_NAME, Format, Args);
-error_msg(_,_) -> ok.
-
-error_msg(Facility, Format, Args)
-  when ?SYSLOG_LOGLEVEL >= ?SYSLOG_LOGLEVEL_ERROR ->
-    syslog:error_msg(?SYSLOG_NAME, Facility, Format, Args);
-error_msg(_,_,_) -> ok.
-
-%% --
-warning_msg(Format, Args)
-  when ?SYSLOG_LOGLEVEL >= ?SYSLOG_LOGLEVEL_WARNING ->
-    syslog:warning_msg(?SYSLOG_NAME, Format, Args);
-warning_msg(_,_) -> ok.
-
-warning_msg(Facility, Format, Args)
-  when ?SYSLOG_LOGLEVEL >= ?SYSLOG_LOGLEVEL_WARNING ->
-    syslog:warning_msg(?SYSLOG_NAME, Facility, Format, Args);
-warning_msg(_,_,_) -> ok.
-
-%% --
-notice_msg(Format, Args)
-  when ?SYSLOG_LOGLEVEL >= ?SYSLOG_LOGLEVEL_NOTICE ->
-    syslog:notice_msg(?SYSLOG_NAME, Format, Args);
-notice_msg(_,_) -> ok.
-
-notice_msg(Facility, Format, Args)
-  when ?SYSLOG_LOGLEVEL >= ?SYSLOG_LOGLEVEL_NOTICE ->
-    syslog:notice_msg(?SYSLOG_NAME, Facility, Format, Args);
-notice_msg(_,_,_) -> ok.
-
-info_msg(Format, Args)
-  when ?SYSLOG_LOGLEVEL >= ?SYSLOG_LOGLEVEL_INFO ->
-    syslog:info_msg(?SYSLOG_NAME, Format, Args);
-info_msg(_,_) -> ok.
-
-info_msg(Facility, Format, Args)
-  when ?SYSLOG_LOGLEVEL >= ?SYSLOG_LOGLEVEL_INFO ->
-    syslog:info_msg(?SYSLOG_NAME, Facility, Format, Args);
-info_msg(_,_,_) -> ok.
-
-debug_msg(Format, Args)
-  when ?SYSLOG_LOGLEVEL >= ?SYSLOG_LOGLEVEL_DEBUG ->
-    syslog:debug_msg(?SYSLOG_NAME, Format, Args);
-debug_msg(_,_) -> ok.
-
-debug_msg(Facility, Format, Args)
-  when ?SYSLOG_LOGLEVEL >= ?SYSLOG_LOGLEVEL_DEBUG ->
-    syslog:debug_msg(?SYSLOG_NAME, Facility, Format, Args);
-debug_msg(_,_,_) -> ok.
-
--else.
-
-get_loglevel() ->
-    notice.
-
-log(_,_,_) -> ok.
-
-emergency_msg(_,_) -> ok.
-emergency_msg(_,_,_) -> ok.
-
-alert_msg(_,_) -> ok.
-alert_msg(_,_,_) -> ok.
-
-critical_msg(_,_) -> ok.
-critical_msg(_,_,_) -> ok.
-
-error_msg(_,_) -> ok.
-error_msg(_,_,_) -> ok.
-
-warning_msg(_,_) -> ok.
-warning_msg(_,_,_) -> ok.
-
-notice_msg(_,_) -> ok.
-notice_msg(_,_,_) -> ok.
-
-info_msg(_,_) -> ok.
-info_msg(_,_,_) -> ok.
-
-debug_msg(_,_) -> ok.
-debug_msg(_,_,_) -> ok.
-
--endif.
-
 
 %%====================================================================
 %% Internal functions
@@ -347,3 +391,57 @@ get_srcfile() ->
                     end
             end
     end.
+
+get_module_options(ModName, LoggerName, Priority) ->
+    LogLevel = Priority#priority.log_level,
+    N        = syslog:LogLevel(),
+    [
+     binary,
+     return,
+     warnings_as_errors,
+     {parse_transform,          ?MODULE},
+     {d, 'MODULE_NAME',         ModName},
+     {d, 'LOGGER_NAME',         LoggerName},
+     {d, 'LOGGER_PRIORITY',     Priority},
+     {d, 'LOGGER_LOGLEVEL_INT', N}
+    ] ++
+        if N >= ?SYSLOG_LOGLEVEL_EMERGENCY -> [{d, 'LOG_EMERGENCY_MSG'}];
+           true                            -> []
+        end ++
+        if N >= ?SYSLOG_LOGLEVEL_ALERT     -> [{d, 'LOG_ALERT_MSG'}];
+           true                            -> []
+        end ++
+        if N >= ?SYSLOG_LOGLEVEL_CRITICAL  -> [{d, 'LOG_CRITIAL_MSG'}];
+           true                            -> []
+        end ++
+        if N >= ?SYSLOG_LOGLEVEL_ERROR     -> [{d, 'LOG_ERROR_MSG'}];
+           true                            -> []
+        end ++
+        if N >= ?SYSLOG_LOGLEVEL_WARNING   -> [{d, 'LOG_WARNING_MSG'}];
+           true                            -> []
+        end ++
+        if N >= ?SYSLOG_LOGLEVEL_NOTICE    -> [{d, 'LOG_NOTICE_MSG'}];
+           true                            -> []
+        end ++
+        if N >= ?SYSLOG_LOGLEVEL_INFO      -> [{d, 'LOG_INFO_MSG'}];
+           true                            -> []
+        end ++
+        if N >= ?SYSLOG_LOGLEVEL_DEBUG     -> [{d, 'LOG_DEBUG_MSG'}];
+           true                            -> []
+        end.
+
+
+compile(File, Options) ->
+    case compile:file(File, Options) of
+        {ok, ModName, Binary}    -> load(ModName, Binary);
+        {ok, ModName, Binary, _} -> load(ModName, Binary);
+        _                        -> error
+    end.
+
+load(ModName, Binary) ->
+    case code:load_binary(ModName, [], Binary) of
+        {module, ModName} -> ok;
+        {error, _What}    -> error
+    end.
+
+-endif.

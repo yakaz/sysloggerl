@@ -2,7 +2,7 @@ if HAVE_TS_TOOLS
 
 include @top_srcdir@/include.mk
 
-MODULES = basic_SUITE.erl syslog_SUITE.erl
+MODULES = basic_SUITE.erl syslog_SUITE.erl syslog_wrapper_SUITE.erl
 
 EBIN_DIR=@top_builddir@/testsuite
 EBIN_FILES=$(MODULES:%.erl=$(EBIN_DIR)/%.beam)
