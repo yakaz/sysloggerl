@@ -31,7 +31,6 @@
 %% API
 -export([
          start_link/0,
-         stop/0,
          set/1, set/4,
          unset/1,
          loggers/0,
@@ -108,12 +107,6 @@
 %%====================================================================
 start_link() ->
     gen_server:start_link({local, ?MODULE}, ?MODULE, [], []).
-
-%% ----
--spec stop() -> ok.
-
-stop() ->
-    gen_server:cast(?MODULE, stop).
 
 %% ----
 -spec set(Name, Ident, Priority, Options) -> Result when
@@ -652,8 +645,6 @@ handle_call({unset, Name}, _From, State) ->
     {reply, ok, State}.
 
 %% ----
-handle_cast(stop, State) ->
-    {stop, normal, State};
 handle_cast(_Msg, State) ->
     {noreply, State}.
 
