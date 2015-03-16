@@ -64,9 +64,11 @@ First of all, before using **sysloggerl**, you must start it:
 1> application:start(sysloggerl).
 ```
 
-Then, you can use `syslog` module to log messages, to set new loggers or to
-retrieve info about existing ones.  
-To ease its use, the **sysloggerl** application exports two records (see
+Then, you can use [syslog](doc/syslog.md) module to log messages, to set new
+loggers or to retrieve info about existing ones.  
+
+To ease its use, the **sysloggerl** application
+[exports useful types](doc/syslog.md#exported-types) and two records (see
 [sysloggerl.hrl](include/sysloggerl.hrl) file):
 
 
@@ -85,7 +87,8 @@ To ease its use, the **sysloggerl** application exports two records (see
 
 The **sysloggerl** application can handle several loggers, with different
 logging options. So it is possible to send messages with different
-identification strings, different priorities, to different syslog servers.
+identification strings, different [priorities](doc/syslog.md#priority), to
+different syslog servers.
 
 At any time, you can add a new logger or update an existing one:
 
@@ -173,12 +176,13 @@ following parameters in the application environment:
 
 * `{default_facility, syslog:facility()}`
 
-  Specifies the default Syslog facility used to log messages. Default value:
-  `user`.
+  Specifies the default Syslog [facility](doc/syslog.md#facility) used to log
+  messages. Default value: `user`.
 
 * `{default_loglevel, syslog:loglevel()}`
 
-  Specifies the default minimum level to log messages. Default value: `notice`.
+  Specifies the default minimum [level](doc/syslog.md#loglevel) to log
+  messages. Default value: `notice`.
 
 By default, **sysloggerl** logs events reported by the error logger using a
 dedicated logger. There are additional parameters to configure this logger:
@@ -195,12 +199,13 @@ dedicated logger. There are additional parameters to configure this logger:
 
 * `{error_logger_facility, syslog:facility()}`
 
-  Specifies the Syslog facility used to log error logger events. Default value:
-  `user`.
+  Specifies the Syslog [facility](doc/syslog.md#facility) used to log error
+  logger events. Default value: `user`.
 
 * `{error_logger_loglevel, syslog:loglevel()}`
 
-  Sets the minimum level to log error logger events. Default value: `info`.
+  Sets the minimum [level](doc/syslog.md#loglevel) to log error logger
+  events. Default value: `info`.
 
 * `{error_logger_depth, -1 | non_neg_integer()}`
 
@@ -221,8 +226,54 @@ dedicated logger. There are additional parameters to configure this logger:
 
 ## Advanced feature: The syslog wrappers
 
-TODO
+For performance reasons, **sysloggerl** application tries to filter unwanted log
+messages by comparing their log level with the minimum level of the used logger.
+So, for a logger with a minimum log level set to `notice`, all `debug` and
+`info` messages will be dropped by the application. This avoids unnecessary UDP
+traffic.  
+Of course this is not a mandatory. You could always set the minimum level of a
+logger to debug and let the syslog daemon do its job with respect of its
+configuration.  
+Internally, loggers are stored in an ETS table. So a lookup is required for each
+messages, regardless if it will be sent or not. This is not really huge but on
+an heavily used application, such calls could be not negligible.
 
+Next, a typical and encouraged usage for applications that log their messages
+through **sysloggerl** is to define a dedicated logger. But it would seem
+annoying to use the [syslog API](doc/syslog.md) by repeating the logger name for each log
+messages.
+
+To solve these problems, you can wrap your logger in a logger module, using the
+[syslog_wrapper API](doc/syslog_wrapper.md):
+
+```erlang
+16> Prio = syslog:priority(user, info).
+17> Opts = [{host, "192.168.200.15"}, {port, 514}].
+18> syslog_wrapper:create(my_app_logger, "my_app", Prio, Opts).
+ok
+19> my_app_logger:get_name().
+{syslog_wrapper, my_app_logger}
+20> my_app_logger:debug_msg("Just a test!").
+ok
+```
+
+When you call `syslog_wrapper:create/4`, a module is compiled *on the fly*.  
+Such created logger modules can be updated by re-calling
+`syslog_wrapper:create/4`. So, like with sysloggerl loggers, it is possible to
+dynamically adapt its log level to your needs. And at any time you can remove it
+by calling `syslog_wrapper:destroy/1` using the module name as argument:
+
+```erlang
+21> syslog_wrapper:destroy(my_app_logger).
+22> code:is_loaded(my_app_logger).
+false
+```
+
+**Important**: To do its job, `syslog_wrapper` needs to have access to its own
+source file. It starts to search it in the `src` subdirectory directly under the
+top directory of the **sysloggerl** application (by calling
+`code:lib_dir(sysloggerl, src)`. Then, if not found, it retrieves the `source`
+attribute returned by `syslog_wrapper:module_info(compile)`.
 
 ## API
 
