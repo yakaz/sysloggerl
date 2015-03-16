@@ -119,8 +119,13 @@ start_link() ->
                 | {error, invalid_facility | invalid_loglevel}
                 | {error, inet:posix()}.
 
-set(Name, Ident, Priority, Options) ->
-    gen_server:call(?MODULE, {set, Name, Ident, Priority, Options}).
+set(Name, Ident, Prio, Opts) ->
+    case {is_facility_valid(Prio#priority.facility),
+          is_loglevel_valid(Prio#priority.log_level)} of
+        {true, true} -> gen_server:call(?MODULE, {set,Name,Ident,Prio,Opts});
+        {false, _}   -> {error, invalid_facility};
+        {_, false}   -> {error, invalid_loglevel}
+    end.
 
 
 %% ----
@@ -131,8 +136,8 @@ set(Name, Ident, Priority, Options) ->
                 | {error, inet:posix()}.
 
 set(Logger) ->
-    gen_server:call(?MODULE, {set, Logger#logger.name, Logger#logger.ident,
-                              Logger#logger.priority, Logger#logger.options}).
+    set(Logger#logger.name, Logger#logger.ident,
+        Logger#logger.priority, Logger#logger.options).
 
 %% ----
 -spec unset(any()) -> ok.
