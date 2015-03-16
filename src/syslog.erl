@@ -781,42 +781,37 @@ truncate_line(Line) ->
     end.
 
 %%====================================================================
-send_syslog_message(Name, Priority, Format, []) ->
-    send_syslog_formatted_message(Name, Priority, Format);
-send_syslog_message(Name, Priority, Format, Args) ->
-    Message = lists:flatten(io_lib:format(Format, Args)),
-    send_syslog_formatted_message(Name, Priority, Message).
-
-send_syslog_formatted_message(Name, #priority{log_level=LogLevel}=Priority,
-                              Message) ->
+send_syslog_message(Name, #priority{log_level=LogLevel}=Priority,
+                    Format, Args) ->
     case ets:lookup(syslog_loggers, Name) of
         [] ->
             ok;
         [Logger] when LogLevel == undefined ->
-            send_syslog_lines(
-              Logger, split_formatted_message(Logger, Priority, Message)
-             );
+            Message = format_message(Logger, Priority, Format, Args),
+            [send_packet(Logger, Line) || Line <- Message];
         [#logger{priority=P}=Logger] ->
             Min = ?MODULE:(P#priority.log_level)(),
             Cur = ?MODULE:LogLevel(),
             if
                 Cur =< Min ->
-                    send_syslog_lines(
-                      Logger, split_formatted_message(Logger, Priority, Message)
-                     );
+                    Message = format_message(Logger, Priority, Format, Args),
+                    [send_packet(Logger, Line) || Line <- Message];
                 true ->
                     ok
             end
     end.
 
-split_formatted_message(Logger, Priority, Message) ->
+format_message(Logger, Priority, Message, []) ->
+    format_message(Logger, Priority, Message);
+format_message(Logger, Priority, Format, Args) ->
+    format_message(Logger, Priority,
+                   lists:flatten(io_lib:format(Format, Args))).
+
+format_message(Logger, Priority, Message) ->
     Prefix = format_prefix(Logger, Priority),
     prepend_line_nb(Prefix, string:tokens(Message, "\n")).
 
-send_syslog_lines(Logger, Lines) ->
-    lists:foreach(fun(Ln) -> send_syslog_packet(Logger, Ln) end, Lines).
-
-send_syslog_packet(#logger{udp_socket=Socket, options=Opts}, Packet) ->
+send_packet(#logger{udp_socket=Socket, options=Opts}, Packet) ->
     Host = get_host(Opts),
     Port = get_port(Opts),
     gen_udp:send(Socket, Host, Port, Packet).
