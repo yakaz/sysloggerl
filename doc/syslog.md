@@ -15,10 +15,10 @@ TODO
 
 ## Exported types
 
-<a href="#facility"></a>
-<a href="#loglevel"></a>
-<a href="#priority"></a>
-<a href="#logger"></a>
+<a name="facility"></a>
+<a name="loglevel"></a>
+<a name="priority"></a>
+<a name="logger"></a>
 ```erlang
 facility() :: kern   | user   | mail   | daemon | auth     | syslog
             | lpr    | news   | uucp   | cron   | authpriv | ftp
