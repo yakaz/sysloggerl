@@ -34,6 +34,7 @@ EBIN_DIR=@abs_top_builddir@/ebin
 INC_DIR=@abs_top_builddir@/include
 COVERSPEC=@abs_builddir@/@PACKAGE_NAME@.coverspec
 
+
 ALL_SUITES=$1
 SUITES=$2
 CASES=$3
@@ -56,6 +57,11 @@ if (test x"$CASES" != x); then
     suites_and_cases="$suites_and_cases -case $CASES"
 fi
 
+cover_opt=
+if test x"$USE_COVER" = xyes; then
+    cover_opt="-cover $COVERSPEC"
+fi
+
 
 COLORS=$(tput colors 2> /dev/null)
 if (test $? = 0) && (test $COLORS -gt 2); then
@@ -72,27 +78,33 @@ export GREEN_COLOR=$green
 export STD_COLOR=$std
 export BOLD_COLOR=$bold
 
-$CT_RUN -label $LABEL -logdir $LOG_DIR -dir $CUR_DIR -cover $COVERSPEC  \
-        $suites_and_cases -no_auto_compile                              \
+$CT_RUN -label $LABEL -logdir $LOG_DIR -dir $CUR_DIR $cover_opt \
+        $suites_and_cases -no_auto_compile                      \
         -pa $EBIN_DIR -include $INC_DIR > $LOG_FILE
 estatus=$?
-
-$COVER_TO_HTML
-
 case $estatus in
     0) col=$green res=PASS;;
     *) col=$red   res=FAIL;;
 esac
 
-TEST_PATH=$(grep "ct_run.ct@" ${LOG_FILE} | sed -e 's/^.*"\(.*\)".*$/\1/')
 
+if test x"$USE_COVER" = xyes; then
+    echo
+    echo "${bold}Coverage analysis${std}..."
+    $COVER_TO_HTML
+fi
+
+
+TEST_PATH=$(grep "ct_run.ct@" ${LOG_FILE} | sed -e 's/^.*"\(.*\)".*$/\1/')
 echo
 echo "${bold}RESULT: ${col}${res}${std}"
 echo "============================================================================${std}"
 echo " see ${LOG_FILE} for details${std}"
 echo
 echo " common_test result: ${TEST_PATH}/index.html${std}"
-echo " coverage result:    ${LOG_DIR}/cover.html${std}"
+if test x"$USE_COVER" = xyes; then
+    echo " coverage result:    ${LOG_DIR}/cover.html${std}"
+fi
 echo "============================================================================${std}"
 echo
 

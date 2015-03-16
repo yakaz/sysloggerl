@@ -17,6 +17,8 @@ ALL_SUITES = $(MODULES:%.erl=%)
 SUITES     = all
 CASES      = all
 
+USE_COVER  = no
+
 EXTRA_DIST = $(MODULES) testsuite.hrl
 
 
@@ -37,7 +39,7 @@ $(LOG_DIR):
 
 common_test: all $(LOG_DIR)
 	$(AM_V_at)echo "  RUN     $@ [suites=$(SUITES) - cases=$(CASES)]"
-	$(AM_V_at)@builddir@/run_common_test "$(ALL_SUITES)" "$(SUITES)" "$(CASES)"
+	$(AM_V_at)USE_COVER=$(USE_COVER) @builddir@/run_common_test "$(ALL_SUITES)" "$(SUITES)" "$(CASES)"
 
 check-local: common_test
 
