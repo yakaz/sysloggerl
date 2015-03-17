@@ -33,12 +33,18 @@
 
 -export([
          use_default_logger/1,
-         use_custom_logger/1
+         use_custom_logger/1,
+         dont_log_empty_line/1,
+         log_multiline_messages/1,
+         log_too_long_messages/1
         ]).
 
 all() -> [
           use_default_logger,
-          use_custom_logger
+          use_custom_logger,
+          dont_log_empty_line,
+          log_multiline_messages,
+          log_too_long_messages
          ].
 
 
@@ -124,6 +130,84 @@ use_custom_logger(Config) ->
     ?assertEqual(not_found, syslog:logger(my_logger)),
     ok.
 
+%% ----
+dont_log_empty_line(Config) ->
+    Socket = ?config(udp_socket, Config),
+    %% Empty messages should be ignored
+    syslog:log([]),
+    Packet = read_syslog_message(Socket),
+    ?assertEqual(no_udp_packet, Packet),
+    ok.
+
+%% ----
+log_multiline_messages(Config) ->
+    Socket = ?config(udp_socket, Config),
+    %% Trailing newlines should be skipped
+    syslog:log("test\n"),
+    Packets1 = read_syslog_message(Socket),
+    ?assertEqual(0, string:chr(Packets1, $\n)),
+    ?assertEqual(1, string:words(Packets1, $\n)),
+
+    %% Check multi-line message
+    syslog:log("1\n2\n3\n4"),
+    Packets2 = read_syslog_message(Socket),
+    ?assertEqual(4, string:words(Packets2, $\n)),
+    ok.
+
+%% ----
+log_too_long_messages(Config) ->
+    Socket = ?config(udp_socket, Config),
+
+    %% Compute the syslog header size
+    Msg = "test",
+    syslog:log(Msg),
+    Packet1 = read_syslog_message(Socket),
+    ?assert(no_udp_packet /= Packet1),
+    HdrSz = length(Packet1) - length(Msg),
+    ?assert(HdrSz > 0),
+
+    %% Log a small message (<< 1024, with the header)
+    syslog:log(lists:duplicate(500-HdrSz, $a)),
+    Packet2 = read_syslog_message(Socket),
+    ?assert(no_udp_packet /= Packet2),
+    ?assertEqual(500, length(Packet2)),
+
+    %% Log a message just under the limit (1023, with the header)
+    syslog:log(lists:duplicate(1023-HdrSz, $a)),
+    Packet3 = read_syslog_message(Socket),
+    ?assert(no_udp_packet /= Packet3),
+    ?assertEqual(1023, length(Packet3)),
+
+    %% Log a message just upper the limit (1025, with the header)
+    syslog:log(lists:duplicate(1025-HdrSz, $a)),
+    Packet4 = read_syslog_message(Socket),
+    ?assert(no_udp_packet /= Packet4),
+    ?assertEqual(1024, length(Packet4)),
+
+    %% Log a too long message (>> 1024, with the header)
+    syslog:log(lists:duplicate(1200-HdrSz, $a)),
+    Packet5 = read_syslog_message(Socket),
+    ?assert(no_udp_packet /= Packet5),
+    ?assertEqual(1024, length(Packet5)),
+
+    %% Compute the prefix size (the "[X/N] " part for multi-line messages)
+    syslog:log("~p~n~p", [Msg, Msg]),
+    [P1,P2] =string:tokens(read_syslog_message(Socket), [$\n]),
+    PfxSz = length(P1) - HdrSz - length(Msg),
+    ?assertEqual(PfxSz, length(P2) - HdrSz - length(Msg)),
+
+    %% Check truncation on multi-line message
+    syslog:log("~p~n~p~n~p~n~p", [lists:duplicate(1200-HdrSz-PfxSz, $a),
+                                  lists:duplicate(1200-HdrSz-PfxSz, $a),
+                                  lists:duplicate(500-HdrSz-PfxSz,  $a),
+                                  lists:duplicate(1200-HdrSz-PfxSz, $a)]),
+    [P3,P4,P5,P6] = string:tokens(read_syslog_message(Socket), [$\n]),
+    ?assertEqual(1024, length(P3)),
+    ?assertEqual(1024, length(P4)),
+    ?assertEqual(500,  length(P5)),
+    ?assertEqual(1024, length(P6)),
+
+    ok.
 
 %%====================================================================
 open_udp_socket() ->
@@ -140,13 +224,19 @@ close_udp_socket(Socket) ->
     gen_udp:close(Socket).
 
 read_syslog_message(Socket) ->
+    case read_syslog_message(Socket, []) of
+        []      -> no_udp_packet;
+        Packets -> string:join(lists:reverse(Packets), "\n")
+    end.
+
+read_syslog_message(Socket, Packets) ->
     receive
         {udp, Socket, _, _, Packet} ->
-            Packet;
+            read_syslog_message(Socket, [Packet|Packets]);
         {udp_closed, Socket} ->
             exit({error, udp_closed})
     after 100 ->
-            no_udp_packet
+            Packets
     end.
 
 
