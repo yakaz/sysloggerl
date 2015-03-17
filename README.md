@@ -17,7 +17,7 @@ Table of contents
  - [Installation](#installation)
   - [Rebar](#rebar)
   - [Autotools](#autotools)
- - [Getting started](#getting-started)
+ - [How it works!](#how-it-works)
   - [Play with loggers](#play-with-loggers)
   - [Log messages](#log-messages)
   - [Syslog `error_logger` handler](#error_logger-handler)
@@ -57,7 +57,7 @@ The default installation path is your Erlang's distribution libraries directory
 (see `code:lib_dir()`).
 
 
-## Getting started
+## How it works!
 
 First of all, before using **sysloggerl**, you must start it:
 
@@ -335,5 +335,6 @@ attribute returned by `syslog_wrapper:module_info(compile)`.
 
 | Modules
 | ---------------------------------------
+| [sysloggerl_app](doc/sysloggerl_app.md)
 | [syslog](doc/syslog.md)
 | [syslog_wrapper](doc/syslog_wrapper.md)
