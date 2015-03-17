@@ -20,6 +20,7 @@ Table of contents
  - [Getting started](#getting-started)
   - [Play with loggers](#play-with-loggers)
   - [Log messages](#log-messages)
+  - [Syslog `error_logger` handler](#error_logger-handler)
  - [Configuration](#configuration)
  - [Advanced feature: The syslog wrappers](#advanced-feature-the-syslog-wrappers)
  - [API](#api)
@@ -153,6 +154,47 @@ logger name:
 
 **Note**: any Erlang term can be used as logger name.
 
+#### Syslog `error_logger` handler
+
+By default, an event handler is added to log events reported by the error
+logger, named [`error_logger_syslog`](src/error_logger_syslog.erl):
+
+```erlang
+16> gen_event:which_handlers(error_logger).
+[error_logger_syslog,error_logger].
+```
+
+It can be disabled by setting `enable_error_logger` flag to `false` in the
+application environment.
+
+*Standard events* sent to the error logger (using `error_logger:*_msg/1,2`
+functions) are logged on one line, with the level as prefix:
+
+```text
+Mar 17 13:56:46 myrkr error_logger: INFO: I'm <0.33.0>
+Mar 17 13:56:46 myrkr error_logger: WARNING: be careful
+Mar 17 13:56:46 myrkr error_logger: ERROR: This is an error
+```
+
+On their side, *Standard report events* (sent using `error_logger:*_report/1`
+functions) are logged with a format similar to the standard event handler:
+
+```text
+Mar 17 14:47:16 myrkr error_logger: [1/4] = INFO REPORT ====
+Mar 17 14:47:16 myrkr error_logger: [2/4]     tag1: data1
+Mar 17 14:47:16 myrkr error_logger: [3/4]     a_term
+Mar 17 14:47:16 myrkr error_logger: [4/4]     tag2: data
+Mar 17 14:47:26 myrkr error_logger: [1/2] = ERROR REPORT ====
+Mar 17 14:47:26 myrkr error_logger: [2/2] Serious error in my module
+```
+
+Note that *User defined reports* are also logged, following the same format.
+
+By default, the [`error_logger_syslog`](src/error_logger_syslog.erl) handler
+will also log *supervisor reports*, *crash reports* and *progress
+reports*. These logs can be removed by switching on, respectively,
+`no_supervisor_report`, `no_crash_report` or `no_progress_report` parameters in
+the application environment.
 
 ## Configuration
 
@@ -185,7 +227,8 @@ following parameters in the application environment:
   messages. Default value: `notice`.
 
 By default, **sysloggerl** logs events reported by the error logger using a
-dedicated logger. There are additional parameters to configure this logger:
+dedicated logger (Standard and SASL's events are logged). There are additional
+parameters to configure this logger:
 
 * `{enable_error_logger, boolean()}`
 
@@ -220,8 +263,21 @@ dedicated logger. There are additional parameters to configure this logger:
 
 * `{error_logger_tty, boolean()}`
 
-  Enables/disables printout of standard events to the tty. See
-  `error_logger:tty/1`. Default value: `false`.
+  Enables/disables printout of *standard events* to the tty. See
+  `error_logger:tty/1`. It also enables/disables *supervisor reports*, *crash
+  reports* and *progress reports*. Default value: `false`.
+
+* `{no_crash_report, boolean()}`
+
+  Enables/disables filtering out *crash reports*. Default value: `false`.
+
+* `{no_supervisor_report, boolean()}`
+
+  Enables/disables filtering out *supervisor reports*. Default value: `false`.
+
+* `{no_progress_report, boolean()}`
+
+  Enables/disables filtering out *progress reports*. Default value: `false`.
 
 
 ## Advanced feature: The syslog wrappers
@@ -247,13 +303,13 @@ To solve these problems, you can wrap your logger in a logger module, using the
 [syslog_wrapper API](doc/syslog_wrapper.md):
 
 ```erlang
-16> Prio = syslog:priority(user, info).
-17> Opts = [{host, "192.168.200.15"}, {port, 514}].
-18> syslog_wrapper:create(my_app_logger, "my_app", Prio, Opts).
+17> Prio = syslog:priority(user, info).
+18> Opts = [{host, "192.168.200.15"}, {port, 514}].
+19> syslog_wrapper:create(my_app_logger, "my_app", Prio, Opts).
 ok
-19> my_app_logger:get_name().
+20> my_app_logger:get_name().
 {syslog_wrapper, my_app_logger}
-20> my_app_logger:debug_msg("Just a test!").
+21> my_app_logger:debug_msg("Just a test!").
 ok
 ```
 
@@ -264,8 +320,8 @@ dynamically adapt its log level to your needs. And at any time you can remove it
 by calling `syslog_wrapper:destroy/1` using the module name as argument:
 
 ```erlang
-21> syslog_wrapper:destroy(my_app_logger).
-22> code:is_loaded(my_app_logger).
+22> syslog_wrapper:destroy(my_app_logger).
+23> code:is_loaded(my_app_logger).
 false
 ```
 
