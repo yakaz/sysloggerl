@@ -69,7 +69,10 @@ params_list() ->
      error_logger_loglevel,
      error_logger_depth,
      error_logger_line_length,
-     error_logger_tty
+     error_logger_tty,
+     no_crash_report,
+     no_supervisor_report,
+     no_progress_report
     ].
 
 %% ----
@@ -105,6 +108,12 @@ is_param_valid(error_logger_depth, Value) ->
 is_param_valid(error_logger_line_length, Value) ->
     (is_integer(Value) andalso Value > 0);
 is_param_valid(error_logger_tty, Value) ->
+    is_boolean(Value);
+is_param_valid(no_crash_report, Value) ->
+    is_boolean(Value);
+is_param_valid(no_supervisor_report, Value) ->
+    is_boolean(Value);
+is_param_valid(no_progress_report, Value) ->
     is_boolean(Value);
 is_param_valid(_Param, _Value) ->
     false.
@@ -239,6 +248,27 @@ log_param_errors([error_logger_line_length = Param | Rest]) ->
      ),
     log_param_errors(Rest);
 log_param_errors([error_logger_tty = Param | Rest]) ->
+    error_logger:warning_msg(
+      "~s: invalid value for \"~s\": ~p.~n"
+      "It must be a boolean.~n",
+      [?APPLICATION, Param, get_param(Param)]
+     ),
+    log_param_errors(Rest);
+log_param_errors([no_crash_report = Param | Rest]) ->
+    error_logger:warning_msg(
+      "~s: invalid value for \"~s\": ~p.~n"
+      "It must be a boolean.~n",
+      [?APPLICATION, Param, get_param(Param)]
+     ),
+    log_param_errors(Rest);
+log_param_errors([no_supervisor_report = Param | Rest]) ->
+    error_logger:warning_msg(
+      "~s: invalid value for \"~s\": ~p.~n"
+      "It must be a boolean.~n",
+      [?APPLICATION, Param, get_param(Param)]
+     ),
+    log_param_errors(Rest);
+log_param_errors([no_progress_report = Param | Rest]) ->
     error_logger:warning_msg(
       "~s: invalid value for \"~s\": ~p.~n"
       "It must be a boolean.~n",

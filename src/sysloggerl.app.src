@@ -27,6 +27,10 @@
          {error_logger_loglevel,    info},
          {error_logger_depth,       -1},
          {error_logger_line_length, 80},
-         {error_logger_tty,         false}
+         {error_logger_tty,         false},
+
+         {no_crash_report,      false},
+         {no_supervisor_report, false},
+         {no_progress_report,   false}
         ]}
  ]}.

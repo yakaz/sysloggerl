@@ -34,22 +34,28 @@
          handle_info/2, terminate/2, code_change/3]).
 
 
--record(state, {ident       :: string(),
-                level       :: syslog:loglevel(),
-                facility    :: syslog:facility(),
-                depth       :: integer(),
-                line_length :: pos_integer()}).
+-record(state, {ident                :: string(),
+                level                :: syslog:loglevel(),
+                facility             :: syslog:facility(),
+                depth                :: integer(),
+                line_length          :: pos_integer(),
+                no_crash_report      :: boolean(),
+                no_supervisor_report :: boolean(),
+                no_progress_report   :: boolean()}).
 
 %%====================================================================
 %% gen_event callbacks
 %%====================================================================
 init([]) ->
     Level = sysloggerl_app:get_param(error_logger_loglevel),
-    S = #state{ident      = sysloggerl_app:get_param(error_logger_ident),
-               level      = syslog:Level(),
-               facility   = sysloggerl_app:get_param(error_logger_facility),
-               depth      = sysloggerl_app:get_param(error_logger_depth),
-               line_length= sysloggerl_app:get_param(error_logger_line_length)},
+    S = #state{ident                = sysloggerl_app:get_param(error_logger_ident),
+               level                = syslog:Level(),
+               facility             = sysloggerl_app:get_param(error_logger_facility),
+               depth                = sysloggerl_app:get_param(error_logger_depth),
+               line_length          = sysloggerl_app:get_param(error_logger_line_length),
+               no_crash_report      = sysloggerl_app:get_param(no_crash_report),
+               no_supervisor_report = sysloggerl_app:get_param(no_supervisor_report),
+               no_progress_report   = sysloggerl_app:get_param(no_progress_report)},
     Prio = syslog:priority(S#state.facility, Level),
     syslog:set(?MODULE, S#state.ident, Prio, []),
     {ok, S}.
@@ -71,6 +77,16 @@ handle_event({info_msg, _Gleader, {Pid, Format, Data}}, State)
     put(logged_pid, Pid),
     Msg = format_message(info, Format, Data),
     syslog:info_msg(?MODULE, Msg, []),
+    {ok, State};
+
+handle_event({error_report, _Gleader, {_, crash_report, _}},
+             #state{no_crash_report=true}=State) ->
+    {ok, State};
+handle_event({error_report, _Gleader, {_, supervisor_report, _}},
+             #state{no_supervisor_report=true}=State) ->
+    {ok, State};
+handle_event({info_report, _Gleader, {_, progress, _}},
+             #state{no_progress_report=true}=State) ->
     {ok, State};
 
 handle_event({error_report, _Gleader, {Pid, Type, Report}}, State)
@@ -119,7 +135,7 @@ format_message(Type, Format, Args) ->
 format_report(Type, Report, State) when is_list(Report) ->
     case io_lib:char_list(Report) of
         true  -> lists:flatten([format_type(Type), Report]);
-        false -> format_report2(Type, Report, "", State)
+        false -> format_report2(Type, Report, [], State)
     end;
 format_report(Type, Report, State) ->
     lists:flatten([format_type(Type), io_lib:print(Report, 1,
@@ -163,4 +179,4 @@ format_type(warning) ->
 format_type(info) ->
     "INFO: ";
 format_type(Type) ->
-    io_lib:format("~p: ", [Type]).
+    io_lib:format("= ~p REPORT ===\n", [Type]).

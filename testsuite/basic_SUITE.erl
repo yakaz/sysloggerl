@@ -99,7 +99,13 @@ check_default_param(error_logger_depth) ->
 check_default_param(error_logger_line_length) ->
     ?assertEqual(80, sysloggerl_app:get_param(error_logger_line_length));
 check_default_param(error_logger_tty) ->
-    ?assertEqual(false, sysloggerl_app:get_param(error_logger_tty)).
+    ?assertEqual(false, sysloggerl_app:get_param(error_logger_tty));
+check_default_param(no_crash_report) ->
+    ?assertEqual(false, sysloggerl_app:get_param(no_crash_report));
+check_default_param(no_supervisor_report) ->
+    ?assertEqual(false, sysloggerl_app:get_param(no_supervisor_report));
+check_default_param(no_progress_report) ->
+    ?assertEqual(false, sysloggerl_app:get_param(no_progress_report)).
 
 
 %% ----
@@ -144,5 +150,8 @@ invalid_config(_) ->
     ?assertEqual(error, sysloggerl_app:check_and_set_param(error_logger_depth,       not_a_integer)),
     ?assertEqual(error, sysloggerl_app:check_and_set_param(error_logger_line_length, not_a_integer)),
     ?assertEqual(error, sysloggerl_app:check_and_set_param(error_logger_tty,         not_a_boolean)),
+    ?assertEqual(error, sysloggerl_app:check_and_set_param(no_crash_report,          not_a_boolean)),
+    ?assertEqual(error, sysloggerl_app:check_and_set_param(no_supervisor_report,     not_a_boolean)),
+    ?assertEqual(error, sysloggerl_app:check_and_set_param(no_progress_report,       not_a_boolean)),
     ?assertEqual(error, sysloggerl_app:check_and_set_param(unknown_param,            true)),
     ok.
