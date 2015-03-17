@@ -79,8 +79,7 @@ params_list() ->
     ].
 
 %% ----
--spec get_param(atom()) -> any() when
-      .
+-spec get_param(atom()) -> any().
 
 get_param(Param) ->
     {ok, Value} = application:get_env(?APPLICATION, Param),
