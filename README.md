@@ -117,7 +117,7 @@ All existing loggers (or a specific one using its name) can be retrieved:
  #logger{name = default,ident = "sysloggerl",
          udp_socket = #Port<0.748>,
          priority = #priority{facility = user,log_level = notice},
-         options = [log_pid,{host,"localhost"},{port,514}]}]
+         options = [log_pid]}]
 
 9> syslog:logger(my_logger).
 #logger{name = my_logger,ident = "test",
@@ -279,6 +279,20 @@ parameters to configure this logger:
 
   Enables/disables filtering out *progress reports*. Default value: `false`.
 
+[sysloggerl_app](doc/sysloggerl_app.md) module can be used to dynamically
+changed the value of these parameters. To take effet, the **sysloggerl**
+application must be reloaded:
+
+```erlang
+17> sysloggerl_app:check_and_set_param(default_ident, "my_default_logger").
+18> sysloggerl_app:reload().
+19> syslog:logger(default).
+#logger{name = default,ident = "my_default_logger",
+        udp_socket = #Port<0.748>,
+        priority = #priority{facility = user,log_level = notice},
+        options = [log_pid]}]
+```
+
 
 ## Advanced feature: The syslog wrappers
 
@@ -303,13 +317,13 @@ To solve these problems, you can wrap your logger in a logger module, using the
 [syslog_wrapper API](doc/syslog_wrapper.md):
 
 ```erlang
-17> Prio = syslog:priority(user, info).
-18> Opts = [{host, "192.168.200.15"}, {port, 514}].
-19> syslog_wrapper:create(my_app_logger, "my_app", Prio, Opts).
+20> Prio = syslog:priority(user, info).
+21> Opts = [{host, "192.168.200.15"}, {port, 514}].
+22> syslog_wrapper:create(my_app_logger, "my_app", Prio, Opts).
 ok
-20> my_app_logger:get_name().
+23> my_app_logger:get_name().
 {syslog_wrapper, my_app_logger}
-21> my_app_logger:debug_msg("Just a test!").
+24> my_app_logger:debug_msg("Just a test!").
 ok
 ```
 
@@ -320,8 +334,8 @@ dynamically adapt its log level to your needs. And at any time you can remove it
 by calling `syslog_wrapper:destroy/1` using the module name as argument:
 
 ```erlang
-22> syslog_wrapper:destroy(my_app_logger).
-23> code:is_loaded(my_app_logger).
+25> syslog_wrapper:destroy(my_app_logger).
+26> code:is_loaded(my_app_logger).
 false
 ```
 
