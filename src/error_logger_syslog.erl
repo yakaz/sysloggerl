@@ -47,18 +47,7 @@
 %% gen_event callbacks
 %%====================================================================
 init([]) ->
-    Level = sysloggerl_app:get_param(error_logger_loglevel),
-    S = #state{ident                = sysloggerl_app:get_param(error_logger_ident),
-               level                = syslog:Level(),
-               facility             = sysloggerl_app:get_param(error_logger_facility),
-               depth                = sysloggerl_app:get_param(error_logger_depth),
-               line_length          = sysloggerl_app:get_param(error_logger_line_length),
-               no_crash_report      = sysloggerl_app:get_param(no_crash_report),
-               no_supervisor_report = sysloggerl_app:get_param(no_supervisor_report),
-               no_progress_report   = sysloggerl_app:get_param(no_progress_report)},
-    Prio = syslog:priority(S#state.facility, Level),
-    syslog:set(?MODULE, S#state.ident, Prio, []),
-    {ok, S}.
+    {ok, do_init()}.
 
 handle_event({error, _Gleader, {Pid, Format, Data}}, State)
   when State#state.level >= ?SYSLOG_LOGLEVEL_ERROR ->
@@ -111,9 +100,10 @@ handle_event({info_report, _Gleader, {Pid, Type, Report}}, State)
 handle_event(_Event, State) ->
     {ok, State}.
 
+handle_call(reload, _State) ->
+    {ok, ok, do_init()};
 handle_call(_Request, State) ->
-    Reply = ok,
-    {ok, Reply, State}.
+    {ok, ok, State}.
 
 handle_info(_Info, State) ->
     {ok, State}.
@@ -129,6 +119,21 @@ code_change(_OldVsn, State, _Extra) ->
 %%====================================================================
 %% Internal functions
 %%====================================================================
+do_init() ->
+    Level = sysloggerl_app:get_param(error_logger_loglevel),
+    S = #state{ident                = sysloggerl_app:get_param(error_logger_ident),
+               level                = syslog:Level(),
+               facility             = sysloggerl_app:get_param(error_logger_facility),
+               depth                = sysloggerl_app:get_param(error_logger_depth),
+               line_length          = sysloggerl_app:get_param(error_logger_line_length),
+               no_crash_report      = sysloggerl_app:get_param(no_crash_report),
+               no_supervisor_report = sysloggerl_app:get_param(no_supervisor_report),
+               no_progress_report   = sysloggerl_app:get_param(no_progress_report)},
+    Prio = syslog:priority(S#state.facility, Level),
+    syslog:set(?MODULE, S#state.ident, Prio, []),
+    S.
+
+
 format_message(Type, Format, Args) ->
     lists:flatten([format_type(Type), io_lib:format(Format, Args)]).
 

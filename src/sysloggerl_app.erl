@@ -31,12 +31,15 @@
 -export([
          params_list/0,
          get_param/1,
-         is_param_valid/2,
          set_param/2,
          check_and_set_param/2,
          show_params/0,
-         check_params/0,
-         log_param_errors/1
+         check_params/0
+        ]).
+
+%% API.
+-export([
+         reload/0
         ]).
 
 %% application(3erl) callbacks.
@@ -54,7 +57,7 @@
 %%====================================================================
 %% Configuration API.
 %%====================================================================
--spec params_list() -> [atom() | any()].
+-spec params_list() -> [atom()].
 
 params_list() ->
     [
@@ -76,7 +79,8 @@ params_list() ->
     ].
 
 %% ----
--spec get_param(atom()) -> any().
+-spec get_param(atom()) -> any() when
+      .
 
 get_param(Param) ->
     {ok, Value} = application:get_env(?APPLICATION, Param),
@@ -164,12 +168,10 @@ check_params() ->
     end.
 
 %% ----
--spec log_param_errors([atom() | {atom(), any()}]) -> ok.
+-spec log_param_errors([atom()]) -> ok.
 
 log_param_errors([]) ->
     ok;
-log_param_errors([{Param, _}|Rest]) ->
-   log_param_errors([Param|Rest]);
 log_param_errors([default_syslog_host = Param | Rest]) ->
     error_logger:warning_msg(
       "~s: invalid value for \"~s\": ~p.~n"
@@ -282,6 +284,49 @@ log_param_errors([Param | Rest]) ->
      ),
     log_param_errors(Rest).
 
+
+%%====================================================================
+%% API.
+%%====================================================================
+-spec reload() -> ok                             |
+                  {error, invalid_configuration} |
+                  {error, {not_started, sysloggerl}}.
+
+reload() ->
+    case lists:keymember(sysloggerl, 1, application:which_applications()) of
+        true ->
+            case check_params() of
+                true ->
+                    reload_default_logger(),
+                    reload_error_logger_syslog(),
+                    ok;
+                false ->
+                    {error, invalid_configuration}
+            end;
+        false ->
+            {error, {not_started, sysloggerl}}
+    end.
+
+reload_default_logger() ->
+    DIdent    = sysloggerl_app:get_param(default_ident),
+    DFacility = sysloggerl_app:get_param(default_facility),
+    DLevel    = sysloggerl_app:get_param(default_loglevel),
+    DPriority = syslog:priority(DFacility, DLevel),
+    DOpts     = [log_pid],
+    syslog:set(default, DIdent, DPriority, DOpts).
+
+
+reload_error_logger_syslog() ->
+    Hdls = gen_event:which_handlers(error_logger),
+    case lists:member(error_logger_syslog, Hdls) of
+        true ->
+            case sysloggerl_app:get_param(enable_error_logger) of
+                true  -> gen_event:call(error_logger, error_logger_syslog, reload);
+                false -> error_logger:delete_report_handler(error_logger_syslog)
+            end;
+        false ->
+            post_start()
+    end.
 
 %%====================================================================
 %% application(3erl) callbacks.

@@ -598,11 +598,7 @@ init([]) ->
             DefaultLevel    = sysloggerl_app:get_param(default_loglevel),
             DefaultPriority = #priority{facility=DefaultFacility,
                                         log_level=DefaultLevel},
-            DefaultOptions  = [
-                               log_pid,
-                               {host, get_host([])},
-                               {port, get_port([])}
-                              ],
+            DefaultOptions  = [log_pid],
 
             Logger = #logger{name       = default,
                              ident      = DefaultIdent,
