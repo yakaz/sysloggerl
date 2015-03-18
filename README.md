@@ -2,9 +2,10 @@
 
 **sysloggerl** is a pure [Erlang/OTP](http://www.erlang.org/) application for
 logging messages to syslog daemons, using UDP sockets. It provides a
-customizable error_logger report handler and can handles several loggers with
-different logging options. For now, it implements only the
-[RFC 3164](http://tools.ietf.org/html/rfc3164) protocol.
+customizable [`error_logger`](http://www.erlang.org/doc/man/error_logger.html)
+event handler and can handle several loggers with different logging options. For
+now, it only implements the [RFC 3164](http://tools.ietf.org/html/rfc3164)
+protocol.
 
 **sysloggerl** is distributed under the terms of the **2-clause BSD license**;
 see `COPYING`.
@@ -30,16 +31,25 @@ Table of contents
 
 ### Rebar
 
-If you use rebar, you can run the following command to build the application:
+If you use [rebar](https://github.com/rebar/rebar), you can run the following
+command to build the application:
 
 ```bash
 rebar compile
 ```
 
+The testsuite is implemented using the
+[Common Test framework](http://www.erlang.org/doc/apps/common_test/users_guide.html). To
+run it with rebar:
+
+```bash
+rebar ct
+```
+
 ### Autotools
 
-If you use the Autotools and `make(1)`, run the following commands to build the
-application:
+If you use the Autotools and `make(1)`, run the following commands to build and
+install the application:
 
 ```bash
 # Generate Autotools files.
@@ -49,12 +59,15 @@ autoreconf -vif
 ./configure
 make
 
+# Run the testsuite
+make check USE_COVER=yes
+
 # Install it.
 sudo make install
 ```
 
 The default installation path is your Erlang's distribution libraries directory
-(see `code:lib_dir()`).
+(see [`code:lib_dir()`](http://www.erlang.org/doc/man/code.html#lib_dir-0)).
 
 
 ## How it works!
@@ -214,7 +227,7 @@ following parameters in the application environment:
 * `{default_ident, string()}`
 
   Specifies the identification string which will be prepended by default to
-  logged messages. Default value: `sysloggerl`.
+  logged messages. Default value: `"sysloggerl"`.
 
 * `{default_facility, syslog:facility()}`
 
@@ -296,16 +309,16 @@ application must be reloaded:
 
 ## Advanced feature: The syslog wrappers
 
-For performance reasons, **sysloggerl** application tries to filter unwanted log
-messages by comparing their log level with the minimum level of the used logger.
-So, for a logger with a minimum log level set to `notice`, all `debug` and
-`info` messages will be dropped by the application. This avoids unnecessary UDP
-traffic.  
+For performance reasons, **sysloggerl** application tries to filter out unwanted
+log messages by comparing their log level with the minimum level of the used
+logger.  So, for a logger with a minimum log level set to `notice`, all `debug`
+and `info` messages will be dropped by the application. This avoids unnecessary
+UDP traffic.  
 Of course this is not a mandatory. You could always set the minimum level of a
-logger to debug and let the syslog daemon do its job with respect of its
+logger to `debug` and let the syslog daemon do its job with respect of its
 configuration.  
 Internally, loggers are stored in an ETS table. So a lookup is required for each
-messages, regardless if it will be sent or not. This is not really huge but on
+message, regardless if it will be sent or not. This is not really huge but on
 an heavily used application, such calls could be not negligible.
 
 Next, a typical and encouraged usage for applications that log their messages
@@ -313,8 +326,8 @@ through **sysloggerl** is to define a dedicated logger. But it would seem
 annoying to use the [syslog API](doc/syslog.md) by repeating the logger name for each log
 messages.
 
-To solve these problems, you can wrap your logger in a logger module, using the
-[syslog_wrapper API](doc/syslog_wrapper.md):
+To solve these problems, you can wrap your logger in a *logger module*, using
+the [syslog_wrapper API](doc/syslog_wrapper.md):
 
 ```erlang
 20> Prio = syslog:priority(user, info).
