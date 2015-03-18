@@ -1,3 +1,5 @@
+[**README**](/README.md) &#10143; **syslog_wrapper**
+
 # Module syslog_wrapper
 
 - [Description](#description)
@@ -137,7 +139,7 @@ This function never fails.
 #### Module:LOGLEVEL_msg/1,2
 
 **Here `LOGLEVEL` should be replaced by one of the log levels defined
-[here](doc/syslog_wrapper.md#loglevel0).**
+[here](syslog.md#loglevel0).**
 
 ```erlang
 Module:LOGLEVEL_msg(Message) -> Result when

@@ -1,3 +1,5 @@
+[**README**](/README.md) &#10143; **syslog**
+
 # Module syslog
 
 - [Description](#description)
