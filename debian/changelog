@@ -1,6 +1,42 @@
+erlang-sysloggerl (1.3.0-1) experimental; urgency=low
+
+  * 2959ec6 Do other small fixes in the documentation
+  * 5362d26 Typo in syslogger_app.md
+  * adb7752 Add doc about the modules API
+  * c721fb7 Review the syslog module to have a more consistent API
+  * 89ded59 Small fixes in README.md
+  * ae48fa2 Fix typo in sysloggerl_app.erl
+  * e70eae3 Update README.md file
+  * 4da10db Add documentation aboug sysloggerl_app module
+  * e940503 Allow application reloads with the function sysloggerl_app:relead/0
+  * 2e0bb82 Add doc about the error_logger handler
+  * 24d799e Add 'no_crash/supervisor/progress_report' params in the app environm
+  * 553dbf1 Improve syslog testsuite
+  * d9e21b6 Update copyright headers to follow the "BSD 2-Clause License" format
+  * 011b159 Fix markdown formatting in doc/syslog.md
+  * 1813ab2 Add info about the syslog wrappers in README.md
+  * f290845 Do the message formatting after the filtering on the log level
+  * df541c3 Add a check on the priority when syslog:set/1,4 is called
+  * 83e109e Add syslog and syslog_wrapper documentation (still in progress)
+  * 078b961 Make the coverage analysis optional and disabled by default
+  * 4f05e91 Small changes in README.md
+  * 491557c Syslog module implement gen_server behaviour
+  * bafe9f2 Refactor syslog_wrapper module
+  * 07ed67d Add syslog_SUITE testsuite
+  * fd64007 Remove useless function syslog:stop/0
+  * c72e6c7 Fill the README.md file
+  * 1526b41 Return the created/updated logger when syslog:set/1,4 is called
+  * ea7f3a4 Do not test Yaws anymore on R14B02 on Travis platform
+  * eda21d8 Add testsuite support
+  * f4d43e8 Return 'error' atom when an error occured in check_and_set_param/2
+  * 9f72004 Fix a typo in syslogger_app module: s/pre_stop/prep_stop/
+  * 1196867 Move the default configuration in the .app file
+
+ -- Christopher Faulet <christopher@yakaz.com>  Wed, 18 Mar 2015 16:20:24 +0100
+
 erlang-sysloggerl (1.2.1-1) experimental; urgency=low
 
-  * Relax typespec on a logger's name
+  * cfe5a7a Relax typespec on a logger's name
 
  -- Christopher Faulet <christopher@yakaz.com>  Fri, 20 Feb 2015 11:52:50 +0100
 
