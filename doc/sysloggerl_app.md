@@ -4,7 +4,7 @@
 - [Function index](#functions-index)
 - [Function details](#functions-details)
 
-**Behaviours**: application.
+**Behaviours**: application.  
 **Authors**: Christopher Faulet (christopher.faulet@capflam.org).
 
 
