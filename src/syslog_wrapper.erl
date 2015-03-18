@@ -79,16 +79,16 @@ get_logger() ->
 %% ----
 -spec log(Message) -> Result when
       Message  :: string(),
-      Result   :: ok | {error, inet:posix()}.
+      Result   :: ok.
 -spec log(Format, Args) -> Result when
       Format   :: string(),
       Args     :: list(),
-      Result   :: ok | {error, inet:posix()}.
+      Result   :: ok.
 -spec log(LogLevel, Format, Args) -> Result when
       LogLevel :: syslog:loglevel(),
       Format   :: string(),
       Args     :: list(),
-      Result   :: ok | {error, inet:posix()}.
+      Result   :: ok.
 
 log(Message) ->
     syslog:log(?LOGGER_NAME, ?LOGGER_PRIORITY, Message, []).
@@ -109,11 +109,11 @@ log(LogLevel, Format, Args) ->
 
 -spec emergency_msg(Message) -> Result when
       Message  :: string(),
-      Result   :: ok | {error, inet:posix()}.
+      Result   :: ok.
 -spec emergency_msg(Format, Args) -> Result when
       Format   :: string(),
       Args     :: list(),
-      Result   :: ok | {error, inet:posix()}.
+      Result   :: ok.
 
 emergency_msg(Message) ->
     syslog:emergency_msg(?LOGGER_NAME, Message, []).
@@ -133,11 +133,11 @@ emergency_msg(_,_) -> noop.
 
 -spec alert_msg(Message) -> Result when
       Message  :: string(),
-      Result   :: ok | {error, inet:posix()}.
+      Result   :: ok.
 -spec alert_msg(Format, Args) -> Result when
       Format   :: string(),
       Args     :: list(),
-      Result   :: ok | {error, inet:posix()}.
+      Result   :: ok.
 
 alert_msg(Message) ->
     syslog:alert_msg(?LOGGER_NAME, Message, []).
@@ -157,11 +157,11 @@ alert_msg(_,_) -> noop.
 
 -spec critical_msg(Message) -> Result when
       Message  :: string(),
-      Result   :: ok | {error, inet:posix()}.
+      Result   :: ok.
 -spec critical_msg(Format, Args) -> Result when
       Format   :: string(),
       Args     :: list(),
-      Result   :: ok | {error, inet:posix()}.
+      Result   :: ok.
 
 critical_msg(Message) ->
     syslog:critical_msg(?LOGGER_NAME, Message, []).
@@ -181,11 +181,11 @@ critical_msg(_,_) -> noop.
 
 -spec error_msg(Message) -> Result when
       Message  :: string(),
-      Result   :: ok | {error, inet:posix()}.
+      Result   :: ok.
 -spec error_msg(Format, Args) -> Result when
       Format   :: string(),
       Args     :: list(),
-      Result   :: ok | {error, inet:posix()}.
+      Result   :: ok.
 
 error_msg(Message) ->
     syslog:error_msg(?LOGGER_NAME, Message, []).
@@ -205,11 +205,11 @@ error_msg(_,_) -> noop.
 
 -spec warning_msg(Message) -> Result when
       Message  :: string(),
-      Result   :: ok | {error, inet:posix()}.
+      Result   :: ok.
 -spec warning_msg(Format, Args) -> Result when
       Format   :: string(),
       Args     :: list(),
-      Result   :: ok | {error, inet:posix()}.
+      Result   :: ok.
 
 warning_msg(Message) ->
     syslog:warning_msg(?LOGGER_NAME, Message, []).
@@ -229,11 +229,11 @@ warning_msg(_,_) -> noop.
 
 -spec notice_msg(Message) -> Result when
       Message  :: string(),
-      Result   :: ok | {error, inet:posix()}.
+      Result   :: ok.
 -spec notice_msg(Format, Args) -> Result when
       Format   :: string(),
       Args     :: list(),
-      Result   :: ok | {error, inet:posix()}.
+      Result   :: ok.
 
 notice_msg(Message) ->
     syslog:notice_msg(?LOGGER_NAME, Message, []).
@@ -253,11 +253,11 @@ notice_msg(_,_) -> noop.
 
 -spec info_msg(Message) -> Result when
       Message  :: string(),
-      Result   :: ok | {error, inet:posix()}.
+      Result   :: ok.
 -spec info_msg(Format, Args) -> Result when
       Format   :: string(),
       Args     :: list(),
-      Result   :: ok | {error, inet:posix()}.
+      Result   :: ok.
 
 info_msg(Message)  ->
     syslog:info_msg(?LOGGER_NAME, Message, []).
@@ -277,11 +277,11 @@ info_msg(_,_) -> noop.
 
 -spec debug_msg(Message) -> Result when
       Message  :: string(),
-      Result   :: ok | {error, inet:posix()}.
+      Result   :: ok.
 -spec debug_msg(Format, Args) -> Result when
       Format   :: string(),
       Args     :: list(),
-      Result   :: ok | {error, inet:posix()}.
+      Result   :: ok.
 
 debug_msg(Message) ->
     syslog:debug_msg(?LOGGER_NAME, Message, []).

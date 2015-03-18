@@ -275,7 +275,7 @@ check_logger(Socket, Logger) ->
 log(Socket, Logger, Fun, Msg) ->
     FArgs = if
                 Logger#logger.name == default -> [Msg];
-                Fun == log -> [Logger#logger.name, #priority{}, Msg, []];
+                Fun == log -> [Logger#logger.name, undefined, Msg, []];
                 true -> [Logger#logger.name, Msg, []]
             end,
     do_log(Socket, Logger, Fun, FArgs, Msg).
@@ -283,7 +283,7 @@ log(Socket, Logger, Fun, Msg) ->
 log(Socket, Logger, Fun, Fmt, Args) ->
     FArgs = if
                 Logger#logger.name == default -> [Fmt, Args];
-                Fun == log -> [Logger#logger.name, #priority{}, Fmt, Args];
+                Fun == log -> [Logger#logger.name, undefined, Fmt, Args];
                 true -> [Logger#logger.name, Fmt, Args]
             end,
     ExepectedMsg = lists:flatten(io_lib:format(Fmt,Args)),
@@ -292,7 +292,7 @@ log(Socket, Logger, Fun, Fmt, Args) ->
 nolog(Socket, Logger, Fun, Msg) ->
     FArgs = if
                 Logger#logger.name == default -> [Msg];
-                Fun == log -> [Logger#logger.name, #priority{}, Msg, []];
+                Fun == log -> [Logger#logger.name, undefined, Msg, []];
                 true -> [Logger#logger.name, Msg, []]
             end,
     do_log(Socket, Logger, Fun, FArgs, no_udp_packet).
@@ -300,7 +300,7 @@ nolog(Socket, Logger, Fun, Msg) ->
 nolog(Socket, Logger, Fun, Fmt, Args) ->
     FArgs = if
                 Logger#logger.name == default -> [Fmt, Args];
-                Fun == log -> [Logger#logger.name, #priority{}, Fmt, Args];
+                Fun == log -> [Logger#logger.name, undefined, Fmt, Args];
                 true -> [Logger#logger.name, Fmt, Args]
             end,
     do_log(Socket, Logger, Fun, FArgs, no_udp_packet).
